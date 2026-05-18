@@ -154,13 +154,25 @@ onMounted(() => {
   pointer-events: none;
   transform: translate(-50%, -50%);
   background: radial-gradient(circle, rgba(255,220,150,0.25) 0%, rgba(255,200,120,0.10) 35%, transparent 65%);
+  mix-blend-mode: soft-light;
   transition: left 0.1s ease-out, top 0.1s ease-out;
-  z-index: 2;
+  z-index: 4;
   left: -300px; top: -300px;
 }
 .scatter-container.dark .cursor-glow {
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(255,200,120,0.35) 0%, rgba(255,180,100,0.15) 25%, rgba(255,160,80,0.05) 50%, transparent 70%);
+  width: 650px; height: 650px;
+  background: radial-gradient(circle, rgba(255,210,130,0.6) 0%, rgba(255,180,100,0.3) 20%, rgba(255,150,70,0.1) 45%, transparent 65%);
+  mix-blend-mode: screen;
+}
+
+/* 深夜模式全局暗化，光晕像手电筒照亮局部 */
+.scatter-container.dark::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  pointer-events: none;
+  z-index: 3;
 }
 
 .scatter-item {
@@ -173,14 +185,14 @@ onMounted(() => {
 }
 .scatter-item:active { cursor: grabbing; }
 .scatter-container.dark .scatter-item {
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  box-shadow: 0 6px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,200,120,0.05);
 }
 .scatter-item:hover {
   transform: rotate(0deg) scale(1.05) !important;
   box-shadow: 0 12px 40px rgba(0,0,0,0.25);
 }
 .scatter-container.dark .scatter-item:hover {
-  box-shadow: 0 12px 50px rgba(0,0,0,0.6);
+  box-shadow: 0 16px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,200,120,0.1);
 }
 .scatter-item img {
   width: 100%;
