@@ -37,7 +37,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 
 const props = defineProps({
   photos: Array,
@@ -110,9 +110,9 @@ function onDragEnd() {
   document.removeEventListener('mouseleave', onDragEnd)
 }
 
-onMounted(() => {
+function calcPositions() {
   const container = document.querySelector('.scatter-container')
-  if (!container) return
+  if (!container || !props.photos.length) return
   const cw = container.clientWidth - 40
   const seed = [12, 55, 28, 72, 5, 42, 85, 18, 62, 35, 78, 8]
   positionedPhotos.value = props.photos.map((photo, i) => ({
@@ -123,7 +123,12 @@ onMounted(() => {
     rotate: (i % 2 === 0 ? -1 : 1) * (5 + (i % 4) * 3),
     z: 10 - (i % 5)
   }))
-})
+}
+
+watch(() => props.photos, async () => {
+  await nextTick()
+  calcPositions()
+}, { immediate: true })
 </script>
 
 <style scoped>
