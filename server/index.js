@@ -22,6 +22,13 @@ app.use('/api/user', userRoutes)
 app.use('/api/photos', photosRoutes)
 app.use('/api/upload', uploadRoutes)
 
-app.listen(PORT, () => {
+// 托管前端打包文件
+const distPath = path.join(__dirname, '../dist')
+app.use(express.static(distPath))
+app.get('/{*path}', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'))
+})
+
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running at http://localhost:${PORT}`)
 })
