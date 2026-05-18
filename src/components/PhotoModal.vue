@@ -29,6 +29,22 @@
         </div>
       </div>
     </div>
+
+    <!-- 明信片模板（隐藏，仅供导出） -->
+    <div class="postcard-template" ref="postcardEl">
+      <div class="postcard-photo">
+        <img :src="photo.url" crossorigin="anonymous" />
+      </div>
+      <div class="postcard-body">
+        <h2>{{ photo.title }}</h2>
+        <div class="postcard-meta">
+          <span>{{ photo.date }}</span>
+          <span>{{ photo.location }}</span>
+        </div>
+        <p class="postcard-story">{{ photo.story }}</p>
+        <div class="postcard-footer">📷 旅行日记</div>
+      </div>
+    </div>
   </Teleport>
 </template>
 
@@ -43,6 +59,7 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const modalEl = ref(null)
+const postcardEl = ref(null)
 const animating = ref(true)
 
 const modalStyle = computed(() => {
@@ -86,8 +103,8 @@ onMounted(async () => {
 })
 
 async function exportCard() {
-  if (!modalEl.value) return
-  const canvas = await html2canvas(modalEl.value, {
+  if (!postcardEl.value) return
+  const canvas = await html2canvas(postcardEl.value, {
     useCORS: true,
     scale: 2,
     backgroundColor: '#fff'
@@ -220,5 +237,52 @@ function close() {
 }
 .export-btn:hover {
   background: #2980b9;
+}
+
+/* 明信片导出模板 */
+.postcard-template {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 600px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+.postcard-photo img {
+  width: 100%;
+  height: 360px;
+  object-fit: cover;
+  display: block;
+}
+.postcard-body {
+  padding: 28px 32px;
+}
+.postcard-body h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  color: #2c3e50;
+}
+.postcard-meta {
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 16px;
+}
+.postcard-story {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #555;
+  margin: 0 0 20px;
+}
+.postcard-footer {
+  text-align: right;
+  font-size: 13px;
+  color: #bbb;
+  border-top: 1px solid #eee;
+  padding-top: 12px;
 }
 </style>
