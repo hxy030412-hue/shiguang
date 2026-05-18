@@ -10,15 +10,20 @@
       <button class="theme-btn" @click="$emit('toggle-dark')">
         {{ darkMode ? '☀️' : '🌙' }}
       </button>
+      <div class="user-info">
+        <span class="username">{{ user?.nickname || user?.username }}</span>
+        <button class="logout-btn" @click="$emit('logout')">退出</button>
+      </div>
     </div>
   </nav>
 </template>
 
 <script setup>
 defineProps({
-  darkMode: Boolean
+  darkMode: Boolean,
+  user: Object
 })
-defineEmits(['toggle-dark'])
+defineEmits(['toggle-dark', 'logout'])
 </script>
 
 <style scoped>
@@ -79,13 +84,12 @@ defineEmits(['toggle-dark'])
   background: #3498db;
   color: #fff;
 }
-.navbar.dark .nav-link.active {
-  background: #3498db;
-  color: #fff;
-}
 
 .nav-right {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 .theme-btn {
   padding: 8px 12px;
@@ -104,5 +108,36 @@ defineEmits(['toggle-dark'])
 }
 .navbar.dark .theme-btn:hover {
   background: #4a433a;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.username {
+  font-size: 14px;
+  color: #555;
+}
+.navbar.dark .username {
+  color: #c0a888;
+}
+.logout-btn {
+  padding: 6px 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  color: #888;
+  transition: all 0.3s;
+}
+.navbar.dark .logout-btn {
+  border-color: #3a332a;
+  color: #a09080;
+}
+.logout-btn:hover {
+  border-color: #e74c3c;
+  color: #e74c3c;
 }
 </style>

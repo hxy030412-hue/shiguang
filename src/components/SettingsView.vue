@@ -31,17 +31,22 @@
         </button>
       </div>
 
-      <button class="save-btn" @click="save">保存</button>
+      <button class="save-btn" @click="save" :disabled="saving">
+        {{ saving ? '保存中...' : '保存' }}
+      </button>
       <p v-if="saved" class="saved-msg">已保存</p>
+      <p v-if="error" class="error-msg">{{ error }}</p>
     </div>
   </div>
 </template>
 
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
+import { api } from '../api'
 
-defineProps({
-  darkMode: Boolean
+const props = defineProps({
+  darkMode: Boolean,
+  user: Object
 })
 defineEmits(['toggle-dark'])
 
@@ -51,25 +56,33 @@ const form = reactive({
   bio: ''
 })
 const saved = ref(false)
+const saving = ref(false)
+const error = ref('')
 
 onMounted(() => {
-  const data = localStorage.getItem('travel-diary-profile')
-  if (data) {
-    const p = JSON.parse(data)
-    form.avatar = p.avatar || ''
-    form.nickname = p.nickname || ''
-    form.bio = p.bio || ''
+  if (props.user) {
+    form.avatar = props.user.avatar || ''
+    form.nickname = props.user.nickname || ''
+    form.bio = props.user.bio || ''
   }
 })
 
-function save() {
-  localStorage.setItem('travel-diary-profile', JSON.stringify({
-    avatar: form.avatar,
-    nickname: form.nickname,
-    bio: form.bio
-  }))
-  saved.value = true
-  setTimeout(() => { saved.value = false }, 2000)
+async function save() {
+  saving.value = true
+  error.value = ''
+  try {
+    await api.updateProfile({
+      nickname: form.nickname,
+      avatar: form.avatar,
+      bio: form.bio
+    })
+    saved.value = true
+    setTimeout(() => { saved.value = false }, 2000)
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    saving.value = false
+  }
 }
 </script>
 
@@ -217,9 +230,19 @@ textarea {
 .save-btn:hover {
   background: #2980b9;
 }
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .saved-msg {
   text-align: center;
   color: #27ae60;
+  margin-top: 12px;
+  font-size: 14px;
+}
+.error-msg {
+  text-align: center;
+  color: #e74c3c;
   margin-top: 12px;
   font-size: 14px;
 }
