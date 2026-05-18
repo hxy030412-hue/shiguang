@@ -23,6 +23,9 @@
           <div class="story">
             <p>{{ photo.story }}</p>
           </div>
+          <button class="export-btn" @click="exportCard">
+            导出明信片
+          </button>
         </div>
       </div>
     </div>
@@ -31,6 +34,7 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
+import html2canvas from 'html2canvas'
 
 const props = defineProps({
   photo: Object,
@@ -80,6 +84,19 @@ onMounted(async () => {
     setTimeout(() => { animating.value = false }, 500)
   })
 })
+
+async function exportCard() {
+  if (!modalEl.value) return
+  const canvas = await html2canvas(modalEl.value, {
+    useCORS: true,
+    scale: 2,
+    backgroundColor: '#fff'
+  })
+  const link = document.createElement('a')
+  link.download = `${props.photo.title}.png`
+  link.href = canvas.toDataURL('image/png')
+  link.click()
+}
 
 function close() {
   if (props.originRect && modalEl.value) {
@@ -188,5 +205,20 @@ function close() {
   line-height: 1.8;
   color: #444;
   margin: 0;
+}
+.export-btn {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  background: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.export-btn:hover {
+  background: #2980b9;
 }
 </style>
