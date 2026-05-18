@@ -11,18 +11,19 @@
       v-if="layout === 'grid'"
       :photos="photos"
       :darkMode="darkMode"
-      @select-photo="selectedPhoto = $event"
+      @select-photo="onSelectGrid"
     />
     <ScatterLayout
       v-else
       :photos="photos"
       :darkMode="darkMode"
-      @select-photo="selectedPhoto = $event"
+      @select-photo="onSelectScatter"
     />
 
     <PhotoModal
       v-if="selectedPhoto"
       :photo="selectedPhoto"
+      :originRect="originRect"
       @close="selectedPhoto = null"
     />
   </div>
@@ -38,6 +39,17 @@ import PhotoModal from './components/PhotoModal.vue'
 const layout = ref('scatter')
 const darkMode = ref(false)
 const selectedPhoto = ref(null)
+const originRect = ref(null)
+
+function onSelectScatter({ photo, rect }) {
+  originRect.value = rect
+  selectedPhoto.value = photo
+}
+
+function onSelectGrid({ photo, rect }) {
+  originRect.value = rect
+  selectedPhoto.value = photo
+}
 
 watch(darkMode, (val) => {
   document.body.classList.toggle('dark-mode', val)

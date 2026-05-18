@@ -1,8 +1,8 @@
 <template>
   <Teleport to="body">
-    <div class="modal-mask" @click.self="$emit('close')">
-      <div class="modal-content">
-        <button class="close-btn" @click="$emit('close')">×</button>
+    <div class="modal-mask" @click.self="close">
+      <div class="modal-content" :style="modalStyle" ref="modalEl">
+        <button class="close-btn" @click="close">×</button>
         <div class="photo-section">
           <img :src="photo.url" :alt="photo.title" />
         </div>
@@ -30,41 +30,103 @@
 </template>
 
 <script setup>
-defineProps({
-  photo: Object
+import { ref, computed, onMounted, nextTick } from 'vue'
+
+const props = defineProps({
+  photo: Object,
+  originRect: Object
 })
-defineEmits(['close'])
+const emit = defineEmits(['close'])
+
+const modalEl = ref(null)
+const animating = ref(true)
+
+const modalStyle = computed(() => {
+  if (!animating.value || !props.originRect) return {}
+  const r = props.originRect
+  return {
+    position: 'fixed',
+    left: r.left + 'px',
+    top: r.top + 'px',
+    width: r.width + 'px',
+    height: r.height + 'px',
+    opacity: '0.6',
+    borderRadius: '10px',
+    transition: 'all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+  }
+})
+
+onMounted(async () => {
+  if (!props.originRect) {
+    animating.value = false
+    return
+  }
+  await nextTick()
+  // 强制浏览器记录初始位置
+  modalEl.value?.offsetHeight
+  // 动画到最终位置
+  requestAnimationFrame(() => {
+    if (modalEl.value) {
+      modalEl.value.style.left = '50%'
+      modalEl.value.style.top = '50%'
+      modalEl.value.style.width = '90%'
+      modalEl.value.style.maxWidth = '900px'
+      modalEl.value.style.height = 'auto'
+      modalEl.value.style.maxHeight = '85vh'
+      modalEl.value.style.opacity = '1'
+      modalEl.value.style.borderRadius = '16px'
+      modalEl.value.style.transform = 'translate(-50%, -50%)'
+    }
+    setTimeout(() => { animating.value = false }, 500)
+  })
+})
+
+function close() {
+  if (props.originRect && modalEl.value) {
+    const r = props.originRect
+    modalEl.value.style.transition = 'all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+    modalEl.value.style.left = r.left + 'px'
+    modalEl.value.style.top = r.top + 'px'
+    modalEl.value.style.width = r.width + 'px'
+    modalEl.value.style.height = r.height + 'px'
+    modalEl.value.style.opacity = '0'
+    modalEl.value.style.borderRadius = '10px'
+    modalEl.value.style.transform = 'none'
+    setTimeout(() => emit('close'), 350)
+  } else {
+    emit('close')
+  }
+}
 </script>
 
 <style scoped>
 .modal-mask {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
   backdrop-filter: blur(4px);
+  z-index: 200;
+  animation: fadeIn 0.3s ease;
 }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .modal-content {
   background: #fff;
   border-radius: 16px;
   overflow: hidden;
   display: flex;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   max-width: 900px;
   width: 90%;
   max-height: 85vh;
-  position: relative;
-  animation: slideUp 0.3s ease;
 }
-@keyframes slideUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
+
 .close-btn {
   position: absolute;
   top: 12px;
@@ -83,6 +145,7 @@ defineEmits(['close'])
 .close-btn:hover {
   background: rgba(0, 0, 0, 0.8);
 }
+
 .photo-section {
   flex: 1;
   min-width: 0;
@@ -93,6 +156,7 @@ defineEmits(['close'])
   object-fit: cover;
   display: block;
 }
+
 .info-section {
   flex: 0 0 320px;
   padding: 32px 24px;

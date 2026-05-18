@@ -16,15 +16,16 @@
       v-for="(photo, index) in positionedPhotos"
       :key="photo.id"
       class="scatter-item"
+      :ref="el => photoEls[photo.id] = el"
       :style="{
-        left: photo.x + '%',
+        left: photo.x + 'px',
         top: photo.y + 'px',
         width: photo.w + 'px',
         transform: `rotate(${photo.rotate}deg)`,
         zIndex: photo.z
       }"
       @mouseenter="onPhotoHover(photo)"
-      @click="$emit('select-photo', photo)"
+      @click="onPhotoClick($event, photo)"
     >
       <img :src="photo.url" :alt="photo.title" />
       <div class="overlay">
@@ -36,15 +37,16 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 
 const props = defineProps({
   photos: Array,
   darkMode: Boolean
 })
-defineEmits(['select-photo'])
+const emit = defineEmits(['select-photo'])
 
 const glowEl = ref(null)
+const photoEls = ref({})
 let maxZ = 50
 
 function onMouseMove(e) {
@@ -59,17 +61,35 @@ function onPhotoHover(photo) {
   photo.z = maxZ
 }
 
+function onPhotoClick(e, photo) {
+  const el = photoEls.value[photo.id]
+  const rect = el.getBoundingClientRect()
+  emit('select-photo', { photo, rect })
+}
+
 const positionedPhotos = computed(() => {
   const seed = [12, 55, 28, 72, 5, 42, 85, 18, 62, 35, 78, 8]
   return props.photos.map((photo, i) => ({
     ...photo,
-    x: seed[i % seed.length],
-    y: 80 + Math.floor(i / 3) * 340 + (i % 2 === 0 ? 0 : 40),
+    xPct: seed[i % seed.length],
+    x: 0,
+    y: 0,
     w: 220 + (i % 3) * 60,
     rotate: (i % 2 === 0 ? -1 : 1) * (5 + (i % 4) * 3),
     z: 10 - (i % 5)
   }))
 })
+
+function calcPositions() {
+  const container = document.querySelector('.scatter-container')
+  if (!container) return
+  const cw = container.clientWidth - 40
+  positionedPhotos.value.forEach((photo) => {
+    photo.x = (photo.xPct / 100) * cw
+  })
+}
+
+onMounted(calcPositions)
 </script>
 
 <style scoped>
@@ -79,67 +99,34 @@ const positionedPhotos = computed(() => {
   padding: 20px;
   overflow-x: hidden;
   transition: background 0.6s ease;
-  /* 浅色模式：米白纸张 */
-  background: radial-gradient(
-    ellipse at 50% 30%,
-    #faf8f3 0%,
-    #f0ece4 50%,
-    #e8e3da 100%
-  );
+  background: radial-gradient(ellipse at 50% 30%, #faf8f3 0%, #f0ece4 50%, #e8e3da 100%);
 }
-
-/* 深色模式：深色牛皮纸 */
 .scatter-container.dark {
-  background: radial-gradient(
-    ellipse at 50% 30%,
-    #2a2520 0%,
-    #1e1a16 50%,
-    #151210 100%
-  );
+  background: radial-gradient(ellipse at 50% 30%, #2a2520 0%, #1e1a16 50%, #151210 100%);
 }
 
-/* 噪点纹理 */
 .noise-svg {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   pointer-events: none;
   z-index: 1;
 }
 
-/* 光晕 - 浅色模式 */
 .cursor-glow {
   position: fixed;
-  width: 500px;
-  height: 500px;
+  width: 500px; height: 500px;
   border-radius: 50%;
   pointer-events: none;
   transform: translate(-50%, -50%);
-  background: radial-gradient(
-    circle,
-    rgba(255, 220, 150, 0.25) 0%,
-    rgba(255, 200, 120, 0.10) 35%,
-    transparent 65%
-  );
+  background: radial-gradient(circle, rgba(255,220,150,0.25) 0%, rgba(255,200,120,0.10) 35%, transparent 65%);
   transition: left 0.1s ease-out, top 0.1s ease-out;
   z-index: 2;
-  left: -300px;
-  top: -300px;
+  left: -300px; top: -300px;
 }
-
-/* 光晕 - 深色模式：台灯效果 */
 .scatter-container.dark .cursor-glow {
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(
-    circle,
-    rgba(255, 200, 120, 0.35) 0%,
-    rgba(255, 180, 100, 0.15) 25%,
-    rgba(255, 160, 80, 0.05) 50%,
-    transparent 70%
-  );
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(255,200,120,0.35) 0%, rgba(255,180,100,0.15) 25%, rgba(255,160,80,0.05) 50%, transparent 70%);
 }
 
 .scatter-item {
@@ -147,18 +134,18 @@ const positionedPhotos = computed(() => {
   border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.4s;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94), box-shadow 0.4s;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 .scatter-container.dark .scatter-item {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
 }
 .scatter-item:hover {
-  transform: rotate(0deg) scale(1.15) !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  transform: rotate(0deg) scale(1.05) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
 }
 .scatter-container.dark .scatter-item:hover {
-  box-shadow: 0 12px 50px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 12px 50px rgba(0,0,0,0.6);
 }
 .scatter-item img {
   width: 100%;
@@ -168,11 +155,9 @@ const positionedPhotos = computed(() => {
 }
 .overlay {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 0; left: 0; right: 0;
   padding: 12px;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
   color: #fff;
   opacity: 0;
   transition: opacity 0.3s;
@@ -180,15 +165,7 @@ const positionedPhotos = computed(() => {
   flex-direction: column;
   gap: 2px;
 }
-.scatter-item:hover .overlay {
-  opacity: 1;
-}
-.title {
-  font-size: 14px;
-  font-weight: 600;
-}
-.location {
-  font-size: 12px;
-  opacity: 0.85;
-}
+.scatter-item:hover .overlay { opacity: 1; }
+.title { font-size: 14px; font-weight: 600; }
+.location { font-size: 12px; opacity: 0.85; }
 </style>

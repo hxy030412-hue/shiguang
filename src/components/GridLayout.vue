@@ -4,7 +4,7 @@
       v-for="photo in photos"
       :key="photo.id"
       class="grid-item"
-      @click="$emit('select-photo', photo)"
+      @click="onPhotoClick($event, photo)"
     >
       <img :src="photo.url" :alt="photo.title" />
       <div class="overlay">
@@ -20,7 +20,12 @@ defineProps({
   photos: Array,
   darkMode: Boolean
 })
-defineEmits(['select-photo'])
+const emit = defineEmits(['select-photo'])
+
+function onPhotoClick(e, photo) {
+  const rect = e.currentTarget.getBoundingClientRect()
+  emit('select-photo', { photo, rect })
+}
 </script>
 
 <style scoped>
