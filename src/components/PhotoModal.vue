@@ -42,7 +42,7 @@
           <span>{{ photo.location }}</span>
         </div>
         <p class="postcard-story">{{ photo.story }}</p>
-        <div class="postcard-footer">📷 旅行日记</div>
+        <div class="postcard-footer">📷 拾光</div>
       </div>
     </div>
   </Teleport>

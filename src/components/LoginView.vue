@@ -1,8 +1,8 @@
 <template>
   <div class="login-page">
     <div class="login-card">
-      <h1>📷 旅行日记</h1>
-      <p class="subtitle">记录每一段旅程</p>
+      <h1>📷 拾光</h1>
+      <p class="subtitle">收集生活中的每一束光</p>
 
       <div class="tabs">
         <button :class="{ active: mode === 'login' }" @click="mode = 'login'">登录</button>

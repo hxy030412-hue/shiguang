@@ -1,6 +1,6 @@
 <template>
   <nav class="navbar" :class="{ dark: darkMode }">
-    <router-link to="/" class="logo">📷 旅行日记</router-link>
+    <router-link to="/" class="logo">📷 拾光</router-link>
     <div class="nav-links">
       <router-link to="/" class="nav-link" active-class="active" exact>首页</router-link>
       <router-link to="/map" class="nav-link" active-class="active">足迹地图</router-link>
