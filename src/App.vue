@@ -1,15 +1,22 @@
 <template>
   <div class="app">
-    <NavBar :currentLayout="layout" @switch-layout="layout = $event" />
+    <NavBar
+      :currentLayout="layout"
+      :darkMode="darkMode"
+      @switch-layout="layout = $event"
+      @toggle-dark="darkMode = !darkMode"
+    />
 
     <GridLayout
       v-if="layout === 'grid'"
       :photos="photos"
+      :darkMode="darkMode"
       @select-photo="selectedPhoto = $event"
     />
     <ScatterLayout
       v-else
       :photos="photos"
+      :darkMode="darkMode"
       @select-photo="selectedPhoto = $event"
     />
 
@@ -22,14 +29,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import NavBar from './components/NavBar.vue'
 import GridLayout from './components/GridLayout.vue'
 import ScatterLayout from './components/ScatterLayout.vue'
 import PhotoModal from './components/PhotoModal.vue'
 
 const layout = ref('scatter')
+const darkMode = ref(false)
 const selectedPhoto = ref(null)
+
+watch(darkMode, (val) => {
+  document.body.classList.toggle('dark-mode', val)
+})
 
 const photos = ref([
   {
@@ -153,5 +165,9 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: #f5f5f0;
   min-height: 100vh;
+  transition: background 0.5s;
+}
+body.dark-mode {
+  background: #151210;
 }
 </style>

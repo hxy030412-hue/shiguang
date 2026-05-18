@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar">
+  <nav class="navbar" :class="{ dark: darkMode }">
     <div class="logo">📷 旅行日记</div>
     <div class="nav-right">
       <div class="layout-switch">
@@ -12,6 +12,9 @@
           @click="$emit('switch-layout', 'scatter')"
         >随机漂浮</button>
       </div>
+      <button class="theme-btn" @click="$emit('toggle-dark')">
+        {{ darkMode ? '☀️' : '🌙' }}
+      </button>
       <button class="login-btn">登录</button>
     </div>
   </nav>
@@ -19,9 +22,10 @@
 
 <script setup>
 defineProps({
-  currentLayout: String
+  currentLayout: String,
+  darkMode: Boolean
 })
-defineEmits(['switch-layout'])
+defineEmits(['switch-layout', 'toggle-dark'])
 </script>
 
 <style scoped>
@@ -38,11 +42,20 @@ defineEmits(['switch-layout'])
   right: 0;
   z-index: 100;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: background 0.5s, box-shadow 0.5s;
+}
+.navbar.dark {
+  background: rgba(30, 26, 22, 0.9);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 .logo {
   font-size: 22px;
   font-weight: 700;
   color: #2c3e50;
+  transition: color 0.5s;
+}
+.navbar.dark .logo {
+  color: #e8d5b7;
 }
 .nav-right {
   display: flex;
@@ -54,6 +67,10 @@ defineEmits(['switch-layout'])
   background: #f0f0f0;
   border-radius: 8px;
   overflow: hidden;
+  transition: background 0.5s;
+}
+.navbar.dark .layout-switch {
+  background: #3a332a;
 }
 .layout-switch button {
   padding: 8px 16px;
@@ -64,9 +81,30 @@ defineEmits(['switch-layout'])
   color: #666;
   transition: all 0.3s;
 }
+.navbar.dark .layout-switch button {
+  color: #a09080;
+}
 .layout-switch button.active {
   background: #3498db;
   color: #fff;
+}
+.theme-btn {
+  padding: 8px 12px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.navbar.dark .theme-btn {
+  background: #3a332a;
+}
+.theme-btn:hover {
+  background: #e0e0e0;
+}
+.navbar.dark .theme-btn:hover {
+  background: #4a433a;
 }
 .login-btn {
   padding: 8px 24px;

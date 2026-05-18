@@ -1,5 +1,5 @@
 <template>
-  <div class="grid-container">
+  <div class="grid-container" :class="{ dark: darkMode }">
     <div
       v-for="photo in photos"
       :key="photo.id"
@@ -17,18 +17,22 @@
 
 <script setup>
 defineProps({
-  photos: Array
+  photos: Array,
+  darkMode: Boolean
 })
 defineEmits(['select-photo'])
 </script>
 
 <style scoped>
 .grid-container {
-  columns: 4;
-  column-gap: 16px;
-  padding: 80px 32px 32px;
-  max-width: 1400px;
-  margin: 0 auto;
+  columns: 5;
+  column-gap: 14px;
+  padding: 80px 24px 32px;
+  min-height: 100vh;
+  transition: background 0.5s;
+}
+.grid-container.dark {
+  background: #151210;
 }
 .grid-item {
   break-inside: avoid;
@@ -42,6 +46,12 @@ defineEmits(['select-photo'])
 .grid-item:hover {
   transform: scale(1.02);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+.grid-container.dark .grid-item {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+.grid-container.dark .grid-item:hover {
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
 }
 .grid-item img {
   width: 100%;

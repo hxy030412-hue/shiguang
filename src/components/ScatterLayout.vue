@@ -1,5 +1,5 @@
 <template>
-  <div class="scatter-container" @mousemove="onMouseMove">
+  <div class="scatter-container" :class="{ dark: darkMode }" @mousemove="onMouseMove">
     <!-- 纸质噪点纹理 -->
     <svg class="noise-svg">
       <filter id="noise">
@@ -23,6 +23,7 @@
         transform: `rotate(${photo.rotate}deg)`,
         zIndex: photo.z
       }"
+      @mouseenter="onPhotoHover(photo)"
       @click="$emit('select-photo', photo)"
     >
       <img :src="photo.url" :alt="photo.title" />
@@ -35,20 +36,27 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps({
-  photos: Array
+  photos: Array,
+  darkMode: Boolean
 })
 defineEmits(['select-photo'])
 
 const glowEl = ref(null)
+let maxZ = 50
 
 function onMouseMove(e) {
   if (glowEl.value) {
     glowEl.value.style.left = e.clientX + 'px'
     glowEl.value.style.top = e.clientY + 'px'
   }
+}
+
+function onPhotoHover(photo) {
+  maxZ++
+  photo.z = maxZ
 }
 
 const positionedPhotos = computed(() => {
@@ -70,7 +78,8 @@ const positionedPhotos = computed(() => {
   min-height: 1800px;
   padding: 20px;
   overflow-x: hidden;
-  /* 径向渐变背景 */
+  transition: background 0.6s ease;
+  /* 浅色模式：米白纸张 */
   background: radial-gradient(
     ellipse at 50% 30%,
     #faf8f3 0%,
@@ -79,7 +88,17 @@ const positionedPhotos = computed(() => {
   );
 }
 
-/* 纸质噪点纹理 */
+/* 深色模式：深色牛皮纸 */
+.scatter-container.dark {
+  background: radial-gradient(
+    ellipse at 50% 30%,
+    #2a2520 0%,
+    #1e1a16 50%,
+    #151210 100%
+  );
+}
+
+/* 噪点纹理 */
 .noise-svg {
   position: fixed;
   top: 0;
@@ -90,7 +109,7 @@ const positionedPhotos = computed(() => {
   z-index: 1;
 }
 
-/* 鼠标跟随光晕 - fixed 定位，始终跟随屏幕鼠标 */
+/* 光晕 - 浅色模式 */
 .cursor-glow {
   position: fixed;
   width: 500px;
@@ -110,6 +129,19 @@ const positionedPhotos = computed(() => {
   top: -300px;
 }
 
+/* 光晕 - 深色模式：台灯效果 */
+.scatter-container.dark .cursor-glow {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 200, 120, 0.35) 0%,
+    rgba(255, 180, 100, 0.15) 25%,
+    rgba(255, 160, 80, 0.05) 50%,
+    transparent 70%
+  );
+}
+
 .scatter-item {
   position: absolute;
   border-radius: 10px;
@@ -117,12 +149,16 @@ const positionedPhotos = computed(() => {
   cursor: pointer;
   transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.4s;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  z-index: 10;
+}
+.scatter-container.dark .scatter-item {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 .scatter-item:hover {
   transform: rotate(0deg) scale(1.15) !important;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
-  z-index: 99 !important;
+}
+.scatter-container.dark .scatter-item:hover {
+  box-shadow: 0 12px 50px rgba(0, 0, 0, 0.6);
 }
 .scatter-item img {
   width: 100%;
