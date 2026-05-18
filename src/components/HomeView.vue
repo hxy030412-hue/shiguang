@@ -34,19 +34,32 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import GridLayout from './GridLayout.vue'
 import ScatterLayout from './ScatterLayout.vue'
 import PhotoModal from './PhotoModal.vue'
 
-defineProps({
+const props = defineProps({
   photos: Array,
-  darkMode: Boolean
+  darkMode: Boolean,
+  hasMore: Boolean
 })
+const emit = defineEmits(['load-more'])
 
 const layout = ref('scatter')
 const selectedPhoto = ref(null)
 const originRect = ref(null)
+
+function onScroll() {
+  if (!props.hasMore) return
+  const scrollBottom = window.innerHeight + window.scrollY
+  if (scrollBottom >= document.body.offsetHeight - 300) {
+    emit('load-more')
+  }
+}
+
+onMounted(() => window.addEventListener('scroll', onScroll))
+onUnmounted(() => window.removeEventListener('scroll', onScroll))
 
 function onSelectScatter({ photo, rect }) {
   originRect.value = rect

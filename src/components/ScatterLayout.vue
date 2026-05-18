@@ -27,7 +27,7 @@
       @mouseenter="onPhotoHover(photo)"
       @mousedown="onDragStart($event, photo)"
     >
-      <img :src="photo.url" :alt="photo.title" />
+      <img :src="photo.url" :alt="photo.title" loading="lazy" />
       <div class="overlay">
         <span class="title">{{ photo.title }}</span>
         <span class="location">📍 {{ photo.location }}</span>

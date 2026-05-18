@@ -29,7 +29,7 @@ export const api = {
     request('/user/profile', { method: 'PUT', body: JSON.stringify(data) }),
 
   // 照片
-  getPhotos: () => request('/photos'),
+  getPhotos: (offset = 0, limit = 20) => request(`/photos?offset=${offset}&limit=${limit}`),
   createPhoto: (data) =>
     request('/photos', { method: 'POST', body: JSON.stringify(data) }),
   updatePhoto: (id, data) =>

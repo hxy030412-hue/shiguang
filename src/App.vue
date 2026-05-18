@@ -14,7 +14,9 @@
         :photos="photos"
         :darkMode="darkMode"
         :user="user"
+        :hasMore="hasMore"
         @refresh-photos="loadPhotos"
+        @load-more="loadMore"
       />
       <AddPhotoModal
         v-if="showAdd"
@@ -36,6 +38,8 @@ const darkMode = ref(false)
 const user = ref(null)
 const photos = ref([])
 const showAdd = ref(false)
+const hasMore = ref(true)
+let loadingMore = false
 
 watch(darkMode, (val) => {
   document.body.classList.toggle('dark-mode', val)
@@ -43,9 +47,23 @@ watch(darkMode, (val) => {
 
 async function loadPhotos() {
   try {
-    photos.value = await api.getPhotos()
+    const data = await api.getPhotos(0, 20)
+    photos.value = data.photos
+    hasMore.value = data.hasMore
   } catch {
     photos.value = []
+  }
+}
+
+async function loadMore() {
+  if (loadingMore || !hasMore.value) return
+  loadingMore = true
+  try {
+    const data = await api.getPhotos(photos.value.length, 20)
+    photos.value = [...photos.value, ...data.photos]
+    hasMore.value = data.hasMore
+  } catch {} finally {
+    loadingMore = false
   }
 }
 

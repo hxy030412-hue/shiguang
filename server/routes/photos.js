@@ -5,8 +5,11 @@ import { authMiddleware } from '../middleware/auth.js'
 const router = express.Router()
 
 router.get('/', authMiddleware, (req, res) => {
-  const photos = db.prepare('SELECT * FROM photos WHERE user_id = ? ORDER BY id DESC').all(req.userId)
-  res.json(photos)
+  const limit = Math.min(parseInt(req.query.limit) || 20, 100)
+  const offset = parseInt(req.query.offset) || 0
+  const total = db.prepare('SELECT COUNT(*) as count FROM photos WHERE user_id = ?').get(req.userId).count
+  const photos = db.prepare('SELECT * FROM photos WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?').all(req.userId, limit, offset)
+  res.json({ photos, total, hasMore: offset + limit < total })
 })
 
 router.get('/:id', authMiddleware, (req, res) => {
