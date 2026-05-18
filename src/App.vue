@@ -8,12 +8,18 @@
         :user="user"
         @toggle-dark="darkMode = !darkMode"
         @logout="logout"
+        @add-photo="showAdd = true"
       />
       <router-view
         :photos="photos"
         :darkMode="darkMode"
         :user="user"
         @refresh-photos="loadPhotos"
+      />
+      <AddPhotoModal
+        v-if="showAdd"
+        @close="showAdd = false"
+        @saved="loadPhotos"
       />
     </template>
   </div>
@@ -23,11 +29,13 @@
 import { ref, watch, onMounted } from 'vue'
 import NavBar from './components/NavBar.vue'
 import LoginView from './components/LoginView.vue'
+import AddPhotoModal from './components/AddPhotoModal.vue'
 import { api } from './api'
 
 const darkMode = ref(false)
 const user = ref(null)
 const photos = ref([])
+const showAdd = ref(false)
 
 watch(darkMode, (val) => {
   document.body.classList.toggle('dark-mode', val)

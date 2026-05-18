@@ -6,6 +6,7 @@
       <router-link to="/map" class="nav-link" active-class="active">足迹地图</router-link>
       <router-link to="/settings" class="nav-link" active-class="active">设置</router-link>
     </div>
+    <button class="add-btn" @click="$emit('add-photo')">+</button>
     <div class="nav-right">
       <button class="theme-btn" @click="$emit('toggle-dark')">
         {{ darkMode ? '☀️' : '🌙' }}
@@ -23,7 +24,7 @@ defineProps({
   darkMode: Boolean,
   user: Object
 })
-defineEmits(['toggle-dark', 'logout'])
+defineEmits(['toggle-dark', 'logout', 'add-photo'])
 </script>
 
 <style scoped>
@@ -139,5 +140,25 @@ defineEmits(['toggle-dark', 'logout'])
 .logout-btn:hover {
   border-color: #e74c3c;
   color: #e74c3c;
+}
+
+.add-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #3498db;
+  color: #fff;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.add-btn:hover {
+  background: #2980b9;
+  transform: scale(1.1);
 }
 </style>
