@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>旅行日记</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #f7f5f0;
+      height: 200vh;
+      overflow-x: hidden;
+      font-family: -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+    }
+
+    .navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 40px;
+      background: rgba(247, 245, 240, 0.8);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+    }
+    .logo { font-size: 20px; font-weight: 700; color: #2c3e50; }
+    .login-btn {
+      padding: 8px 28px;
+      background: #2c3e50; color: #fff;
+      border: none; border-radius: 24px;
+      font-size: 14px; cursor: pointer;
+      transition: background 0.3s;
+    }
+    .login-btn:hover { background: #1a252f; }
+
+    .watermark {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none; user-select: none;
+      opacity: 0.05; z-index: 0;
+    }
+    .watermark h1 {
+      font-size: 80px; font-weight: 800;
+      color: #2c3e50; letter-spacing: 10px;
+    }
+    .watermark p {
+      font-size: 18px; color: #2c3e50;
+      margin-top: 16px; letter-spacing: 4px;
+    }
+
+    .canvas { position: relative; width: 100%; height: 100%; }
+
+    .photo-card {
+      position: absolute;
+      background: #fff;
+      padding: 10px 10px 42px;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow:
+        0 2px 8px rgba(0,0,0,0.07),
+        0 1px 3px rgba(0,0,0,0.05);
+      will-change: transform;
+      animation-name: var(--anim);
+      animation-duration: var(--dur);
+      animation-timing-function: ease-in-out;
+      animation-delay: var(--delay);
+      animation-iteration-count: infinite;
+      animation-fill-mode: both;
+      transition:
+        transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94),
+        box-shadow 0.45s cubic-bezier(0.25,0.46,0.45,0.94);
+    }
+
+    .photo-card img {
+      display: block; width: 100%;
+      border-radius: 2px; object-fit: cover;
+    }
+    .photo-meta { padding: 10px 4px 0; }
+    .photo-location {
+      font-size: 13px; font-weight: 600;
+      color: #e67e22; margin-bottom: 2px;
+    }
+    .photo-date { font-size: 11px; color: #aaa; }
+
+    .photo-card:hover {
+      transform: rotate(0deg) scale(1.05) !important;
+      box-shadow:
+        0 24px 60px rgba(0,0,0,0.16),
+        0 8px 20px rgba(0,0,0,0.10);
+      z-index: 999 !important;
+      animation-play-state: paused !important;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="logo">📷 旅行日记</div>
+    <button class="login-btn">登录</button>
+  </nav>
+
+  <div class="watermark">
+    <h1>把世界装进故事里</h1>
+    <p>每一张照片，都是一段不愿遗忘的旅程</p>
+  </div>
+
+  <div class="canvas" id="canvas"></div>
+
+  <script>
+    const photos = [
+      { url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400', loc: '瑞士·少女峰',       date: '2024.07.15', w: 260 },
+      { url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400', loc: '马尔代夫·马累',     date: '2024.01.20', w: 280 },
+      { url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400', loc: '日本·京都',         date: '2024.11.08', w: 240 },
+      { url: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?w=400', loc: '阿联酋·迪拜',       date: '2024.03.05', w: 270 },
+      { url: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400', loc: '新西兰·蒂卡波',     date: '2024.02.14', w: 250 },
+      { url: 'https://images.unsplash.com/photo-1528164344705-47542687000d?w=400', loc: '希腊·圣托里尼',     date: '2024.09.12', w: 230 },
+      { url: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400', loc: '冰岛·雷克雅未克',   date: '2024.12.03', w: 290 },
+      { url: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=400', loc: '意大利·佛罗伦萨',   date: '2024.05.18', w: 245 },
+      { url: 'https://images.unsplash.com/photo-1539367628448-4bc5c9d171c8?w=400', loc: '摩洛哥·舍夫沙万',   date: '2024.04.22', w: 265 },
+      { url: 'https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=400', loc: '挪威·卑尔根',       date: '2024.08.09', w: 255 },
+      { url: 'https://images.unsplash.com/photo-1502301103665-0b95cc738daf?w=400', loc: '土耳其·卡帕多奇亚', date: '2024.06.01', w: 240 },
+      { url: 'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=400', loc: '中国·云南·元阳',    date: '2024.10.15', w: 275 },
+      { url: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400', loc: '马来西亚·吉隆坡',   date: '2024.03.20', w: 250 },
+      { url: 'https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?w=400', loc: '印尼·巴厘岛',       date: '2024.07.28', w: 260 },
+      { url: 'https://images.unsplash.com/photo-1549144511-f099e773c147?w=400', loc: '法国·巴黎',         date: '2024.05.01', w: 235 },
+      { url: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400', loc: '秘鲁·库斯科',       date: '2024.08.15', w: 270 },
+    ];
+
+    const rand = (min, max) => Math.random() * (max - min) + min;
+    const placed = [];
+
+    function canPlace(x, y, w, h) {
+      const gap = 28;
+      for (const c of placed) {
+        if (x < c.x + c.w + gap && x + w + gap > c.x &&
+            y < c.y + c.h + gap && y + h + gap > c.y) return false;
+      }
+      return true;
+    }
+
+    function findPos(w, h) {
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const minX = vw * 0.05, maxX = vw * 0.80 - w;
+      const minY = 0, maxY = vh * 1.50 - h;
+      for (let i = 0; i < 80; i++) {
+        const x = rand(minX, Math.max(minX + 1, maxX));
+        const y = rand(minY, Math.max(minY + 1, maxY));
+        if (canPlace(x, y, w, h)) return { x, y };
+      }
+      return { x: rand(minX, maxX), y: rand(minY, maxY) };
+    }
+
+    // 为每张卡片生成独立的 @keyframes
+    const style = document.createElement('style');
+    document.head.appendChild(style);
+    const canvas = document.getElementById('canvas');
+
+    photos.forEach((p, i) => {
+      const w = p.w, imgH = Math.round(w * 1.35), h = imgH + 52;
+      const { x, y } = findPos(w, h);
+      placed.push({ x, y, w, h });
+
+      const r = rand(-4, 4);
+      const dur = rand(6, 8).toFixed(1);
+      const delay = rand(0, 5).toFixed(1);
+
+      // 生成漂浮关键帧
+      const dx1 = rand(-3, 3).toFixed(1);
+      const dy1 = rand(-12, -4).toFixed(1);
+      const dx2 = rand(-2, 2).toFixed(1);
+      const dy2 = rand(-8, -2).toFixed(1);
+      const dr1 = (r + rand(-1, 1)).toFixed(2);
+      const dr2 = (r + rand(-0.8, 0.8)).toFixed(2);
+      const dr3 = (r + rand(-0.5, 0.5)).toFixed(2);
+
+      style.textContent += `
+        @keyframes float-${i} {
+          0%   { transform: translate(0,0) rotate(${r}deg); }
+          25%  { transform: translate(${dx1}px,${dy1}px) rotate(${dr1}deg); }
+          50%  { transform: translate(${dx2}px,${dy2}px) rotate(${dr2}deg); }
+          75%  { transform: translate(${-dx1*0.5}px,${dy1*0.4}px) rotate(${dr3}deg); }
+          100% { transform: translate(0,0) rotate(${r}deg); }
+        }`;
+
+      const card = document.createElement('div');
+      card.className = 'photo-card';
+      card.style.cssText = `left:${x}px;top:${y}px;width:${w}px;z-index:${Math.floor(rand(1,50))}`;
+      card.style.setProperty('--anim', `float-${i}`);
+      card.style.setProperty('--dur', dur + 's');
+      card.style.setProperty('--delay', delay + 's');
+
+      card.innerHTML =
+        `<img src="${p.url}" alt="${p.loc}" style="height:${imgH}px">` +
+        `<div class="photo-meta">` +
+          `<div class="photo-location">📍 ${p.loc}</div>` +
+          `<div class="photo-date">${p.date}</div>` +
+        `</div>`;
+
+      canvas.appendChild(card);
+    });
+  </script>
+</body>
+</html>
