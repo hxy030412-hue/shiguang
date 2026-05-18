@@ -1,39 +1,32 @@
 <template>
   <nav class="navbar" :class="{ dark: darkMode }">
-    <div class="logo">📷 旅行日记</div>
+    <router-link to="/" class="logo">📷 旅行日记</router-link>
+    <div class="nav-links">
+      <router-link to="/" class="nav-link" active-class="active" exact>首页</router-link>
+      <router-link to="/map" class="nav-link" active-class="active">足迹地图</router-link>
+      <router-link to="/settings" class="nav-link" active-class="active">设置</router-link>
+    </div>
     <div class="nav-right">
-      <div class="layout-switch">
-        <button
-          :class="{ active: currentLayout === 'grid' }"
-          @click="$emit('switch-layout', 'grid')"
-        >瀑布流</button>
-        <button
-          :class="{ active: currentLayout === 'scatter' }"
-          @click="$emit('switch-layout', 'scatter')"
-        >随机漂浮</button>
-      </div>
       <button class="theme-btn" @click="$emit('toggle-dark')">
         {{ darkMode ? '☀️' : '🌙' }}
       </button>
-      <button class="login-btn">登录</button>
     </div>
   </nav>
 </template>
 
 <script setup>
 defineProps({
-  currentLayout: String,
   darkMode: Boolean
 })
-defineEmits(['switch-layout', 'toggle-dark'])
+defineEmits(['toggle-dark'])
 </script>
 
 <style scoped>
 .navbar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 16px 32px;
+  padding: 0 32px;
+  height: 64px;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
   position: fixed;
@@ -48,45 +41,51 @@ defineEmits(['switch-layout', 'toggle-dark'])
   background: rgba(30, 26, 22, 0.9);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
+
 .logo {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   color: #2c3e50;
+  text-decoration: none;
   transition: color 0.5s;
 }
 .navbar.dark .logo {
   color: #e8d5b7;
 }
-.nav-right {
+
+.nav-links {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  gap: 8px;
+  margin-left: 48px;
 }
-.layout-switch {
-  display: flex;
-  background: #f0f0f0;
+.nav-link {
+  padding: 8px 18px;
   border-radius: 8px;
-  overflow: hidden;
-  transition: background 0.5s;
-}
-.navbar.dark .layout-switch {
-  background: #3a332a;
-}
-.layout-switch button {
-  padding: 8px 16px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
+  text-decoration: none;
   font-size: 14px;
   color: #666;
   transition: all 0.3s;
 }
-.navbar.dark .layout-switch button {
+.navbar.dark .nav-link {
   color: #a09080;
 }
-.layout-switch button.active {
+.nav-link:hover {
+  background: rgba(0,0,0,0.05);
+}
+.navbar.dark .nav-link:hover {
+  background: rgba(255,255,255,0.05);
+}
+.nav-link.active {
   background: #3498db;
   color: #fff;
+}
+.navbar.dark .nav-link.active {
+  background: #3498db;
+  color: #fff;
+}
+
+.nav-right {
+  margin-left: auto;
 }
 .theme-btn {
   padding: 8px 12px;
@@ -105,18 +104,5 @@ defineEmits(['switch-layout', 'toggle-dark'])
 }
 .navbar.dark .theme-btn:hover {
   background: #4a433a;
-}
-.login-btn {
-  padding: 8px 24px;
-  background: #3498db;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.3s;
-}
-.login-btn:hover {
-  background: #2980b9;
 }
 </style>

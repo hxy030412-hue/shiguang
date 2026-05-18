@@ -1,30 +1,12 @@
 <template>
   <div class="app">
     <NavBar
-      :currentLayout="layout"
       :darkMode="darkMode"
-      @switch-layout="layout = $event"
       @toggle-dark="darkMode = !darkMode"
     />
-
-    <GridLayout
-      v-if="layout === 'grid'"
+    <router-view
       :photos="photos"
       :darkMode="darkMode"
-      @select-photo="onSelectGrid"
-    />
-    <ScatterLayout
-      v-else
-      :photos="photos"
-      :darkMode="darkMode"
-      @select-photo="onSelectScatter"
-    />
-
-    <PhotoModal
-      v-if="selectedPhoto"
-      :photo="selectedPhoto"
-      :originRect="originRect"
-      @close="selectedPhoto = null"
     />
   </div>
 </template>
@@ -32,24 +14,8 @@
 <script setup>
 import { ref, watch } from 'vue'
 import NavBar from './components/NavBar.vue'
-import GridLayout from './components/GridLayout.vue'
-import ScatterLayout from './components/ScatterLayout.vue'
-import PhotoModal from './components/PhotoModal.vue'
 
-const layout = ref('scatter')
 const darkMode = ref(false)
-const selectedPhoto = ref(null)
-const originRect = ref(null)
-
-function onSelectScatter({ photo, rect }) {
-  originRect.value = rect
-  selectedPhoto.value = photo
-}
-
-function onSelectGrid({ photo, rect }) {
-  originRect.value = rect
-  selectedPhoto.value = photo
-}
 
 watch(darkMode, (val) => {
   document.body.classList.toggle('dark-mode', val)
@@ -63,7 +29,8 @@ const photos = ref([
     date: '2024年7月15日',
     location: '瑞士·少女峰',
     people: '小明、小红',
-    story: '凌晨四点出发，徒步两个小时到达观景台。当第一缕阳光穿透云层照在雪峰上时，所有的疲惫都值了。那一刻觉得世界真大，自己真小。'
+    story: '凌晨四点出发，徒步两个小时到达观景台。当第一缕阳光穿透云层照在雪峰上时，所有的疲惫都值了。那一刻觉得世界真大，自己真小。',
+    lat: 46.5587, lng: 7.9960
   },
   {
     id: 2,
@@ -72,7 +39,8 @@ const photos = ref([
     date: '2024年1月20日',
     location: '马尔代夫·马累',
     people: '独自一人',
-    story: '赤脚走在荧光海滩上，抬头是满天繁星，低头是发光的浮游生物。第一次觉得孤独也可以是享受。'
+    story: '赤脚走在荧光海滩上，抬头是满天繁星，低头是发光的浮游生物。第一次觉得孤独也可以是享受。',
+    lat: 4.1755, lng: 73.5093
   },
   {
     id: 3,
@@ -81,7 +49,8 @@ const photos = ref([
     date: '2024年11月8日',
     location: '日本·京都·清水寺',
     people: '家人',
-    story: '和爸妈一起赏枫，妈妈一直在拍照，爸爸假装嫌弃但笑得最开心。晚上一起吃了热腾腾的寿喜烧。'
+    story: '和爸妈一起赏枫，妈妈一直在拍照，爸爸假装嫌弃但笑得最开心。晚上一起吃了热腾腾的寿喜烧。',
+    lat: 34.9949, lng: 135.7850
   },
   {
     id: 4,
@@ -90,7 +59,8 @@ const photos = ref([
     date: '2024年3月5日',
     location: '阿联酋·迪拜',
     people: '同事们',
-    story: '公司团建去沙漠冲沙，车子在沙丘上飞驰的时候所有人都在尖叫。晚上围着篝火吃烤肉，阿拉伯红茶意外地好喝。'
+    story: '公司团建去沙漠冲沙，车子在沙丘上飞驰的时候所有人都在尖叫。晚上围着篝火吃烤肉，阿拉伯红茶意外地好喝。',
+    lat: 25.2048, lng: 55.2708
   },
   {
     id: 5,
@@ -99,7 +69,8 @@ const photos = ref([
     date: '2024年2月14日',
     location: '新西兰·蒂卡波',
     people: '女朋友',
-    story: '情人节的特别旅行，湖水蓝得不像话。晚上去天文台看银河，她说这是收到过最好的礼物。'
+    story: '情人节的特别旅行，湖水蓝得不像话。晚上去天文台看银河，她说这是收到过最好的礼物。',
+    lat: -44.0047, lng: 170.4769
   },
   {
     id: 6,
@@ -108,7 +79,8 @@ const photos = ref([
     date: '2024年9月12日',
     location: '希腊·圣托里尼',
     people: '大学室友',
-    story: '毕业旅行的最后一站，四个大男生在蓝顶教堂前合影，笑得像傻子。约定十年后再来一次。'
+    story: '毕业旅行的最后一站，四个大男生在蓝顶教堂前合影，笑得像傻子。约定十年后再来一次。',
+    lat: 36.3932, lng: 25.4615
   },
   {
     id: 7,
@@ -117,7 +89,8 @@ const photos = ref([
     date: '2024年12月3日',
     location: '冰岛·雷克雅未克',
     people: '摄影团的朋友们',
-    story: '等了三个小时，手都冻僵了。当绿色的光带开始在天空舞动的时候，所有人都安静了。大自然的震撼无法用照片表达。'
+    story: '等了三个小时，手都冻僵了。当绿色的光带开始在天空舞动的时候，所有人都安静了。大自然的震撼无法用照片表达。',
+    lat: 64.1466, lng: -21.9426
   },
   {
     id: 8,
@@ -126,7 +99,8 @@ const photos = ref([
     date: '2024年5月18日',
     location: '意大利·佛罗伦萨',
     people: '和爸妈',
-    story: '自驾穿越托斯卡纳，路两边是金色的麦田和丝柏树。在路边小酒庄喝了一杯当地的红酒，爸爸说这是他喝过最好的酒。'
+    story: '自驾穿越托斯卡纳，路两边是金色的麦田和丝柏树。在路边小酒庄喝了一杯当地的红酒，爸爸说这是他喝过最好的酒。',
+    lat: 43.7696, lng: 11.2558
   },
   {
     id: 9,
@@ -135,7 +109,8 @@ const photos = ref([
     date: '2024年4月22日',
     location: '摩洛哥·舍夫沙万',
     people: '旅途中认识的朋友',
-    story: '迷路在蓝色的小巷里，遇到了一只懒洋洋的猫。当地老人请我们喝薄荷茶，虽然语言不通但笑容是最好的交流。'
+    story: '迷路在蓝色的小巷里，遇到了一只懒洋洋的猫。当地老人请我们喝薄荷茶，虽然语言不通但笑容是最好的交流。',
+    lat: 35.1714, lng: -5.2697
   },
   {
     id: 10,
@@ -144,7 +119,8 @@ const photos = ref([
     date: '2024年8月9日',
     location: '挪威·卑尔根',
     people: '独自一人',
-    story: '一个人坐邮轮穿越峡湾，两岸是陡峭的山壁和瀑布。带了一本书却一直没翻开，光是看着窗外就足够了。'
+    story: '一个人坐邮轮穿越峡湾，两岸是陡峭的山壁和瀑布。带了一本书却一直没翻开，光是看着窗外就足够了。',
+    lat: 60.3913, lng: 5.3221
   },
   {
     id: 11,
@@ -153,7 +129,8 @@ const photos = ref([
     date: '2024年6月1日',
     location: '土耳其·卡帕多奇亚',
     people: '女朋友',
-    story: '清晨五点坐上热气球，看着上百个热气球同时升空，地面是奇特的地貌。她紧紧抓着我的手，说怕高但不想闭眼。'
+    story: '清晨五点坐上热气球，看着上百个热气球同时升空，地面是奇特的地貌。她紧紧抓着我的手，说怕高但不想闭眼。',
+    lat: 38.6431, lng: 34.8293
   },
   {
     id: 12,
@@ -162,7 +139,8 @@ const photos = ref([
     date: '2024年10月15日',
     location: '中国·云南·元阳',
     people: '摄影俱乐部',
-    story: '为了拍到最好的光线，在田埂上蹲了两个小时。梯田在夕阳下像一面面镜子，倒映着天空的颜色。'
+    story: '为了拍到最好的光线，在田埂上蹲了两个小时。梯田在夕阳下像一面面镜子，倒映着天空的颜色。',
+    lat: 23.0843, lng: 102.8440
   }
 ])
 </script>
