@@ -25,7 +25,7 @@
         zIndex: photo.z
       }"
       @mouseenter="onPhotoHover(photo)"
-      @click="onPhotoClick($event, photo)"
+      @mousedown="onDragStart($event, photo)"
     >
       <img :src="photo.url" :alt="photo.title" />
       <div class="overlay">
@@ -37,7 +37,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const props = defineProps({
   photos: Array,
@@ -47,6 +47,7 @@ const emit = defineEmits(['select-photo'])
 
 const glowEl = ref(null)
 const photoEls = ref({})
+const positionedPhotos = ref([])
 let maxZ = 50
 
 function onMouseMove(e) {
@@ -61,35 +62,68 @@ function onPhotoHover(photo) {
   photo.z = maxZ
 }
 
-function onPhotoClick(e, photo) {
+let dragState = null
+let clickState = null
+
+function onDragStart(e, photo) {
+  e.preventDefault()
+  maxZ++
+  photo.z = maxZ
   const el = photoEls.value[photo.id]
-  const rect = el.getBoundingClientRect()
-  emit('select-photo', { photo, rect })
+  const startX = e.clientX - photo.x
+  const startY = e.clientY - photo.y
+  clickState = { photo, startTime: Date.now(), sx: e.clientX, sy: e.clientY }
+  lastMouse = { x: e.clientX, y: e.clientY }
+  dragState = { photo, startX, startY, el }
+  document.addEventListener('mousemove', onDragMove)
+  document.addEventListener('mouseup', onDragEnd)
+  document.addEventListener('mouseleave', onDragEnd)
 }
 
-const positionedPhotos = computed(() => {
+let lastMouse = { x: 0, y: 0 }
+
+function onDragMove(e) {
+  if (!dragState) return
+  e.preventDefault()
+  lastMouse = { x: e.clientX, y: e.clientY }
+  const { photo, startX, startY, el } = dragState
+  photo.x = e.clientX - startX
+  photo.y = e.clientY - startY
+  el.style.transition = 'none'
+}
+
+function onDragEnd() {
+  if (!dragState) return
+  const { el } = dragState
+  el.style.transition = ''
+  const dt = Date.now() - clickState.startTime
+  const dx = Math.abs(lastMouse.x - clickState.sx)
+  const dy = Math.abs(lastMouse.y - clickState.sy)
+  if (dt < 250 && dx < 5 && dy < 5) {
+    const rect = el.getBoundingClientRect()
+    emit('select-photo', { photo: clickState.photo, rect })
+  }
+  dragState = null
+  clickState = null
+  document.removeEventListener('mousemove', onDragMove)
+  document.removeEventListener('mouseup', onDragEnd)
+  document.removeEventListener('mouseleave', onDragEnd)
+}
+
+onMounted(() => {
+  const container = document.querySelector('.scatter-container')
+  if (!container) return
+  const cw = container.clientWidth - 40
   const seed = [12, 55, 28, 72, 5, 42, 85, 18, 62, 35, 78, 8]
-  return props.photos.map((photo, i) => ({
+  positionedPhotos.value = props.photos.map((photo, i) => ({
     ...photo,
-    xPct: seed[i % seed.length],
-    x: 0,
-    y: 0,
+    x: (seed[i % seed.length] / 100) * cw,
+    y: 80 + Math.floor(i / 3) * 340 + (i % 2 === 0 ? 0 : 40),
     w: 220 + (i % 3) * 60,
     rotate: (i % 2 === 0 ? -1 : 1) * (5 + (i % 4) * 3),
     z: 10 - (i % 5)
   }))
 })
-
-function calcPositions() {
-  const container = document.querySelector('.scatter-container')
-  if (!container) return
-  const cw = container.clientWidth - 40
-  positionedPhotos.value.forEach((photo) => {
-    photo.x = (photo.xPct / 100) * cw
-  })
-}
-
-onMounted(calcPositions)
 </script>
 
 <style scoped>
@@ -133,10 +167,11 @@ onMounted(calcPositions)
   position: absolute;
   border-radius: 10px;
   overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94), box-shadow 0.4s;
+  cursor: grab;
+  transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94), box-shadow 0.4s, left 0s, top 0s;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
+.scatter-item:active { cursor: grabbing; }
 .scatter-container.dark .scatter-item {
   box-shadow: 0 4px 20px rgba(0,0,0,0.4);
 }
