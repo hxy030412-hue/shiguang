@@ -92,34 +92,29 @@ async function save() {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  background: #f5f5f0;
+  background: var(--bg);
   transition: background 0.5s;
-}
-.settings-page.dark {
-  background: #151210;
 }
 
 .settings-card {
-  background: #fff;
-  border-radius: 16px;
+  background: var(--surface);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
   padding: 40px;
   width: 480px;
   max-width: 90%;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-lg);
   height: fit-content;
-}
-.settings-page.dark .settings-card {
-  background: #1e1a16;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  transition: background 0.5s;
 }
 
 h2 {
   margin: 0 0 32px;
   font-size: 24px;
-  color: #2c3e50;
-}
-.settings-page.dark h2 {
-  color: #e8d5b7;
+  color: var(--text);
+  font-weight: 600;
 }
 
 .avatar-section {
@@ -134,10 +129,8 @@ h2 {
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  background: #f0f0f0;
-}
-.settings-page.dark .avatar {
-  background: #3a332a;
+  background: var(--input-bg);
+  border: 2px solid var(--border);
 }
 .avatar img {
   width: 100%;
@@ -152,7 +145,7 @@ h2 {
   justify-content: center;
   font-size: 28px;
   font-weight: 700;
-  color: #999;
+  color: var(--text-muted);
 }
 .avatar-input {
   flex: 1;
@@ -164,31 +157,26 @@ h2 {
 label {
   display: block;
   font-size: 14px;
-  color: #666;
+  color: var(--text-muted);
   margin-bottom: 6px;
-}
-.settings-page.dark label {
-  color: #a09080;
 }
 input, textarea {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
   font-size: 15px;
-  background: #fafafa;
-  color: #333;
-  transition: border-color 0.3s;
-}
-.settings-page.dark input,
-.settings-page.dark textarea {
-  background: #2a2520;
-  border-color: #3a332a;
-  color: #e8d5b7;
+  background: var(--input-bg);
+  color: var(--text);
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 input:focus, textarea:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
 }
 textarea {
   resize: vertical;
@@ -202,33 +190,36 @@ textarea {
 }
 .toggle-btn {
   padding: 8px 20px;
-  border: none;
-  border-radius: 8px;
-  background: #f0f0f0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
   cursor: pointer;
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   transition: all 0.3s;
 }
 .toggle-btn.active {
-  background: #2c3e50;
+  background: var(--accent);
   color: #fff;
+  border-color: var(--accent);
 }
 
 .save-btn {
   width: 100%;
   padding: 12px;
-  background: #3498db;
+  background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 16px;
   cursor: pointer;
   margin-top: 8px;
-  transition: background 0.3s;
+  transition: background 0.3s, box-shadow 0.3s;
+  box-shadow: 0 2px 12px var(--accent-glow);
 }
 .save-btn:hover {
-  background: #2980b9;
+  background: var(--accent-hover);
+  box-shadow: 0 4px 20px var(--accent-glow);
 }
 .save-btn:disabled {
   opacity: 0.6;
@@ -236,13 +227,13 @@ textarea {
 }
 .saved-msg {
   text-align: center;
-  color: #27ae60;
+  color: var(--success);
   margin-top: 12px;
   font-size: 14px;
 }
 .error-msg {
   text-align: center;
-  color: #e74c3c;
+  color: var(--error);
   margin-top: 12px;
   font-size: 14px;
 }

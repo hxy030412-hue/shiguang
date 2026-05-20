@@ -4,6 +4,7 @@
       v-for="photo in photos"
       :key="photo.id"
       class="grid-item"
+      :class="{ 'is-hidden': selectedPhotoId === photo.id }"
       @click="onPhotoClick($event, photo)"
     >
       <img :src="photo.url" :alt="photo.title" loading="lazy" />
@@ -18,7 +19,8 @@
 <script setup>
 defineProps({
   photos: Array,
-  darkMode: Boolean
+  darkMode: Boolean,
+  selectedPhotoId: Number
 })
 const emit = defineEmits(['select-photo'])
 
@@ -31,32 +33,32 @@ function onPhotoClick(e, photo) {
 <style scoped>
 .grid-container {
   columns: 5;
-  column-gap: 14px;
-  padding: 80px 24px 32px;
+  column-gap: 16px;
+  padding: 120px 24px 32px;
   min-height: 100vh;
+  background: var(--bg);
   transition: background 0.5s;
-}
-.grid-container.dark {
-  background: #151210;
 }
 .grid-item {
   break-inside: avoid;
   margin-bottom: 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   cursor: pointer;
   position: relative;
   transition: transform 0.3s, box-shadow 0.3s;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(255,255,255,0.15);
+  background: #fff;
 }
 .grid-item:hover {
   transform: scale(1.02);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-card-hover);
 }
-.grid-container.dark .grid-item {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-}
-.grid-container.dark .grid-item:hover {
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+.grid-item.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
 }
 .grid-item img {
   width: 100%;

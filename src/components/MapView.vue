@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -15,9 +15,11 @@ const props = defineProps({
 })
 
 const mapEl = ref(null)
+let map = null
+let tileLayer = null
 
-onMounted(() => {
-  const map = L.map(mapEl.value, {
+function initMap() {
+  map = L.map(mapEl.value, {
     center: [30, 20],
     zoom: 2,
     minZoom: 2,
@@ -26,21 +28,23 @@ onMounted(() => {
 
   L.control.zoom({ position: 'bottomright' }).addTo(map)
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  const tileUrl = props.darkMode
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+
+  tileLayer = L.tileLayer(tileUrl, {
     attribution: '&copy; OpenStreetMap &copy; CARTO'
   }).addTo(map)
 
   const coords = props.photos.map(p => [p.lat, p.lng])
 
-  // 旅行路线虚线
   L.polyline(coords, {
-    color: '#e74c3c',
+    color: '#c9854d',
     weight: 2,
     opacity: 0.6,
     dashArray: '8, 8'
   }).addTo(map)
 
-  // 每个照片一个 marker
   props.photos.forEach(photo => {
     const icon = L.divIcon({
       className: 'photo-marker',
@@ -59,7 +63,17 @@ onMounted(() => {
       </div>
     `, { maxWidth: 260 })
   })
+}
+
+watch(() => props.darkMode, (dark) => {
+  if (!map || !tileLayer) return
+  const url = dark
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+  tileLayer.setUrl(url)
 })
+
+onMounted(initMap)
 </script>
 
 <style scoped>
@@ -82,7 +96,7 @@ onMounted(() => {
   border-radius: 50%;
   overflow: hidden;
   border: 3px solid #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
   transition: transform 0.2s;
 }
 :deep(.marker-img:hover) {
@@ -107,11 +121,11 @@ onMounted(() => {
 :deep(.popup-content h3) {
   margin: 0 0 4px;
   font-size: 15px;
-  color: #2c3e50;
+  color: #2c2420;
 }
 :deep(.popup-content p) {
   margin: 0;
   font-size: 13px;
-  color: #666;
+  color: #5a4e44;
 }
 </style>

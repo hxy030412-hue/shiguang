@@ -1,26 +1,35 @@
 <template>
   <div class="login-page">
-    <div class="login-card">
-      <h1>📷 拾光</h1>
-      <p class="subtitle">收集生活中的每一束光</p>
+    <!-- 背景漂浮光点 -->
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-orb orb-3"></div>
 
-      <div class="tabs">
-        <button :class="{ active: mode === 'login' }" @click="mode = 'login'">登录</button>
-        <button :class="{ active: mode === 'register' }" @click="mode = 'register'">注册</button>
+    <div class="login-content">
+      <div class="brand">
+        <h1>拾光</h1>
+        <p class="tagline">收集生活中的每一束光</p>
       </div>
 
-      <form @submit.prevent="submit">
-        <div class="form-group">
-          <input v-model="username" placeholder="用户名" autocomplete="username" />
+      <div class="login-card">
+        <div class="tabs">
+          <button :class="{ active: mode === 'login' }" @click="mode = 'login'">登录</button>
+          <button :class="{ active: mode === 'register' }" @click="mode = 'register'">注册</button>
         </div>
-        <div class="form-group">
-          <input v-model="password" type="password" placeholder="密码" autocomplete="current-password" />
-        </div>
-        <p v-if="error" class="error">{{ error }}</p>
-        <button type="submit" class="submit-btn" :disabled="loading">
-          {{ loading ? '请稍候...' : (mode === 'login' ? '登录' : '注册') }}
-        </button>
-      </form>
+
+        <form @submit.prevent="submit">
+          <div class="form-group">
+            <input v-model="username" placeholder="用户名" autocomplete="username" />
+          </div>
+          <div class="form-group">
+            <input v-model="password" type="password" placeholder="密码" autocomplete="current-password" />
+          </div>
+          <p v-if="error" class="error">{{ error }}</p>
+          <button type="submit" class="submit-btn" :disabled="loading">
+            {{ loading ? '请稍候...' : (mode === 'login' ? '登录' : '注册') }}
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 </template>
@@ -59,32 +68,96 @@ async function submit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at 50% 30%, #faf8f3 0%, #f0ece4 50%, #e8e3da 100%);
+  background: var(--bg-gradient);
+  transition: background 0.5s;
+  position: relative;
+  overflow: hidden;
 }
-.login-card {
-  background: #fff;
-  border-radius: 20px;
-  padding: 48px 40px;
-  width: 380px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+
+/* 漂浮光点 */
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+.orb-1 {
+  width: 400px; height: 400px;
+  background: rgba(201, 133, 77, 0.1);
+  top: 15%; right: 10%;
+  animation: orbFloat 18s ease-in-out infinite;
+}
+.orb-2 {
+  width: 300px; height: 300px;
+  background: rgba(212, 160, 106, 0.08);
+  bottom: 20%; left: 5%;
+  animation: orbFloat 22s ease-in-out infinite reverse;
+}
+.orb-3 {
+  width: 250px; height: 250px;
+  background: rgba(184, 115, 57, 0.06);
+  top: 60%; right: 30%;
+  animation: orbFloat 15s ease-in-out infinite 3s;
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(30px, -40px) scale(1.05); }
+  50% { transform: translate(-20px, 20px) scale(0.95); }
+  75% { transform: translate(40px, 30px) scale(1.02); }
+}
+
+.login-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+  z-index: 1;
+  animation: contentFadeIn 0.8s ease;
+}
+
+@keyframes contentFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.brand {
   text-align: center;
 }
-h1 {
-  font-size: 28px;
-  color: #2c3e50;
-  margin: 0 0 8px;
+.brand h1 {
+  font-size: 42px;
+  font-weight: 300;
+  color: var(--text);
+  letter-spacing: 0.15em;
+  margin: 0 0 12px;
 }
-.subtitle {
-  color: #999;
-  margin: 0 0 32px;
-  font-size: 14px;
+.tagline {
+  color: var(--text-muted);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  font-weight: 300;
 }
+
+.login-card {
+  background: var(--surface);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 36px 36px;
+  width: 340px;
+  max-width: 92%;
+  box-shadow: var(--shadow-lg);
+  transition: background 0.5s, border-color 0.5s;
+}
+
 .tabs {
   display: flex;
-  background: #f5f5f0;
-  border-radius: 10px;
+  background: var(--input-bg);
+  border-radius: var(--radius-sm);
   overflow: hidden;
   margin-bottom: 28px;
+  border: 1px solid var(--border);
 }
 .tabs button {
   flex: 1;
@@ -92,53 +165,72 @@ h1 {
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 15px;
-  color: #888;
+  font-size: 14px;
+  color: var(--text-muted);
   transition: all 0.3s;
+  letter-spacing: 0.04em;
 }
 .tabs button.active {
-  background: #3498db;
+  background: var(--accent);
   color: #fff;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
 }
+
 .form-group {
   margin-bottom: 16px;
 }
 input {
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
-  font-size: 15px;
-  background: #fafafa;
-  transition: border-color 0.3s;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  background: var(--input-bg);
+  color: var(--text);
+  transition: border-color 0.3s, box-shadow 0.3s;
   box-sizing: border-box;
+  letter-spacing: 0.02em;
 }
 input:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
+input::placeholder {
+  color: var(--text-muted);
+}
+
 .error {
-  color: #e74c3c;
+  color: var(--error);
   font-size: 13px;
   margin: 0 0 12px;
+  text-align: center;
 }
 .submit-btn {
   width: 100%;
-  padding: 12px;
-  background: #3498db;
+  padding: 13px;
+  background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: 10px;
-  font-size: 16px;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: all 0.3s;
+  box-shadow: 0 2px 16px var(--accent-glow);
+  letter-spacing: 0.06em;
+  margin-top: 4px;
 }
 .submit-btn:hover {
-  background: #2980b9;
+  background: var(--accent-hover);
+  box-shadow: 0 4px 24px var(--accent-glow);
+  transform: translateY(-1px);
+}
+.submit-btn:active {
+  transform: translateY(0);
 }
 .submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 </style>

@@ -1,36 +1,55 @@
 <template>
   <Teleport to="body">
-    <div class="modal-mask" @click.self="close">
-      <div class="modal-content" :style="modalStyle" ref="modalEl">
-        <button class="close-btn" @click="close">×</button>
-        <div class="photo-section">
+    <div
+      class="modal-mask"
+      :class="{ 'mask-visible': phase >= 1, 'mask-full': phase >= 2 }"
+      @click.self="close"
+    >
+      <div class="modal-shell" ref="shellEl" :style="shellStyle">
+        <!-- 照片主体 -->
+        <div class="photo-stage" ref="photoEl" :style="photoStyle">
           <img :src="photo.url" :alt="photo.title" />
         </div>
-        <div class="info-section">
-          <h2>{{ photo.title }}</h2>
-          <div class="info-item">
-            <span class="icon">📅</span>
-            <span>{{ photo.date }}</span>
-          </div>
-          <div class="info-item">
-            <span class="icon">📍</span>
-            <span>{{ photo.location }}</span>
-          </div>
-          <div class="info-item">
-            <span class="icon">👥</span>
-            <span>{{ photo.people }}</span>
-          </div>
-          <div class="story">
-            <p>{{ photo.story }}</p>
-          </div>
-          <button class="export-btn" @click="exportCard">
-            导出明信片
+
+        <!-- 信息面板 -->
+        <div class="info-panel" :class="{ 'info-visible': phase >= 2 }">
+          <button class="close-btn" @click="close">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M1 1L17 17M17 1L1 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
           </button>
+
+          <div class="info-scroll">
+            <h2>{{ photo.title }}</h2>
+
+            <div class="meta-row">
+              <div class="meta-item">
+                <span class="meta-icon">📅</span>
+                <span>{{ photo.date }}</span>
+              </div>
+              <div class="meta-item" v-if="photo.location">
+                <span class="meta-icon">📍</span>
+                <span>{{ photo.location }}</span>
+              </div>
+              <div class="meta-item" v-if="photo.people">
+                <span class="meta-icon">👥</span>
+                <span>{{ photo.people }}</span>
+              </div>
+            </div>
+
+            <div class="story" v-if="photo.story">
+              <p>{{ photo.story }}</p>
+            </div>
+
+            <button class="export-btn" @click="exportCard">
+              <span>导出明信片</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 明信片模板（隐藏，仅供导出） -->
+    <!-- 明信片模板 -->
     <div class="postcard-template" ref="postcardEl">
       <div class="postcard-photo">
         <img :src="photo.url" crossorigin="anonymous" />
@@ -49,7 +68,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import html2canvas from 'html2canvas'
 
 const props = defineProps({
@@ -58,49 +77,110 @@ const props = defineProps({
 })
 const emit = defineEmits(['close'])
 
-const modalEl = ref(null)
+const shellEl = ref(null)
+const photoEl = ref(null)
 const postcardEl = ref(null)
-const animating = ref(true)
+const phase = ref(0) // 0=init, 1=expanding, 2=settled
+const closing = ref(false)
 
-const modalStyle = computed(() => {
-  if (!animating.value || !props.originRect) return {}
+// Apple-style easing: fast start, gentle deceleration with slight overshoot
+const EASE_OUT = 'cubic-bezier(0.2, 0.8, 0.15, 1)'
+const EASE_IN_OUT = 'cubic-bezier(0.4, 0, 0.1, 1)'
+
+const shellStyle = computed(() => {
+  if (!props.originRect) return {}
   const r = props.originRect
+
+  if (phase.value === 0) {
+    // 起始：卡片位置
+    return {
+      left: r.left + 'px',
+      top: r.top + 'px',
+      width: r.width + 'px',
+      height: r.height + 'px',
+      borderRadius: '8px',
+      opacity: '1'
+    }
+  }
+  if (phase.value === 1) {
+    // 展开中：飞向中心
+    return {
+      left: '50%',
+      top: '50%',
+      width: '92vw',
+      maxWidth: '1100px',
+      height: '88vh',
+      borderRadius: '16px',
+      opacity: '1',
+      transform: 'translate(-50%, -50%)',
+      transition: `all 0.65s ${EASE_OUT}`
+    }
+  }
+  // settled
   return {
-    position: 'fixed',
-    left: r.left + 'px',
-    top: r.top + 'px',
-    width: r.width + 'px',
-    height: r.height + 'px',
-    opacity: '0.6',
-    borderRadius: '10px',
-    transition: 'all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+    left: '50%',
+    top: '50%',
+    width: '92vw',
+    maxWidth: '1100px',
+    height: '88vh',
+    borderRadius: '16px',
+    opacity: '1',
+    transform: 'translate(-50%, -50%)'
+  }
+})
+
+const photoStyle = computed(() => {
+  if (phase.value < 2) return { opacity: '1' }
+  return {
+    opacity: '1',
+    transition: 'opacity 0.4s ease'
   }
 })
 
 onMounted(async () => {
   if (!props.originRect) {
-    animating.value = false
+    phase.value = 2
     return
   }
   await nextTick()
-  // 强制浏览器记录初始位置
-  modalEl.value?.offsetHeight
-  // 动画到最终位置
+  // 让浏览器记录起始位置
+  shellEl.value?.offsetHeight
+
   requestAnimationFrame(() => {
-    if (modalEl.value) {
-      modalEl.value.style.left = '50%'
-      modalEl.value.style.top = '50%'
-      modalEl.value.style.width = '90%'
-      modalEl.value.style.maxWidth = '900px'
-      modalEl.value.style.height = 'auto'
-      modalEl.value.style.maxHeight = '85vh'
-      modalEl.value.style.opacity = '1'
-      modalEl.value.style.borderRadius = '16px'
-      modalEl.value.style.transform = 'translate(-50%, -50%)'
-    }
-    setTimeout(() => { animating.value = false }, 500)
+    phase.value = 1
+    // 展开动画完成后显示信息面板
+    setTimeout(() => {
+      phase.value = 2
+    }, 500)
   })
 })
+
+function close() {
+  if (closing.value) return
+  closing.value = true
+
+  if (props.originRect && shellEl.value) {
+    const r = props.originRect
+    // 先隐藏信息面板
+    phase.value = 1
+
+    setTimeout(() => {
+      // 缩回卡片位置
+      shellEl.value.style.transition = `all 0.45s ${EASE_IN_OUT}`
+      shellEl.value.style.left = r.left + 'px'
+      shellEl.value.style.top = r.top + 'px'
+      shellEl.value.style.width = r.width + 'px'
+      shellEl.value.style.height = r.height + 'px'
+      shellEl.value.style.borderRadius = '8px'
+      shellEl.value.style.transform = 'none'
+      shellEl.value.style.opacity = '0'
+
+      setTimeout(() => emit('close'), 450)
+    }, 200)
+  } else {
+    emit('close')
+  }
+}
 
 async function exportCard() {
   if (!postcardEl.value) return
@@ -115,128 +195,159 @@ async function exportCard() {
   link.click()
 }
 
-function close() {
-  if (props.originRect && modalEl.value) {
-    const r = props.originRect
-    modalEl.value.style.transition = 'all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-    modalEl.value.style.left = r.left + 'px'
-    modalEl.value.style.top = r.top + 'px'
-    modalEl.value.style.width = r.width + 'px'
-    modalEl.value.style.height = r.height + 'px'
-    modalEl.value.style.opacity = '0'
-    modalEl.value.style.borderRadius = '10px'
-    modalEl.value.style.transform = 'none'
-    setTimeout(() => emit('close'), 350)
-  } else {
-    emit('close')
-  }
-}
+onUnmounted(() => {
+  document.body.style.overflow = ''
+})
 </script>
 
 <style scoped>
 .modal-mask {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
   z-index: 200;
-  animation: fadeIn 0.3s ease;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  background: rgba(10, 8, 6, 0);
 }
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.modal-mask.mask-visible {
+  opacity: 1;
+  background: rgba(10, 8, 6, 0.55);
+}
+.modal-mask.mask-full {
+  background: rgba(10, 8, 6, 0.7);
+  transition: opacity 0.3s ease, background 0.5s ease;
 }
 
-.modal-content {
-  background: #fff;
-  border-radius: 16px;
+.modal-shell {
+  position: fixed;
   overflow: hidden;
   display: flex;
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  max-width: 900px;
-  width: 90%;
-  max-height: 85vh;
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.2),
+    0 24px 80px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
-.close-btn {
-  position: absolute;
-  top: 12px;
-  right: 16px;
-  background: rgba(0, 0, 0, 0.5);
-  color: #fff;
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  font-size: 22px;
-  cursor: pointer;
-  z-index: 10;
-  transition: background 0.3s;
-}
-.close-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
-}
-
-.photo-section {
+/* 照片区域 */
+.photo-stage {
   flex: 1;
   min-width: 0;
+  position: relative;
+  overflow: hidden;
+  background: #111;
 }
-.photo-section img {
+.photo-stage img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.info-section {
-  flex: 0 0 320px;
-  padding: 32px 24px;
+/* 信息面板 */
+.info-panel {
+  flex: 0 0 340px;
+  background: var(--surface-solid);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  opacity: 0;
+  transform: translateX(30px);
+  transition: opacity 0.5s ease 0.1s, transform 0.5s cubic-bezier(0.2, 0.8, 0.15, 1) 0.1s;
+}
+.info-panel.info-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--input-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  z-index: 10;
+  transition: all 0.3s;
+}
+.close-btn:hover {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.info-scroll {
+  flex: 1;
   overflow-y: auto;
+  padding: 36px 28px;
 }
-.info-section h2 {
-  margin: 0 0 20px;
-  font-size: 22px;
-  color: #2c3e50;
+
+.info-scroll h2 {
+  margin: 0 0 24px;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.01em;
+  line-height: 1.3;
 }
-.info-item {
+
+.meta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.meta-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 14px;
-  font-size: 15px;
-  color: #555;
+  font-size: 14px;
+  color: var(--text-secondary);
 }
-.icon {
-  font-size: 18px;
+.meta-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
 }
+
 .story {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
 }
 .story p {
   font-size: 15px;
-  line-height: 1.8;
-  color: #444;
+  line-height: 1.85;
+  color: var(--text-secondary);
   margin: 0;
+  letter-spacing: 0.01em;
 }
+
 .export-btn {
-  margin-top: 20px;
+  margin-top: 28px;
   width: 100%;
-  padding: 12px;
-  background: #3498db;
+  padding: 14px;
+  background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: all 0.3s;
+  box-shadow: 0 2px 16px var(--accent-glow);
+  letter-spacing: 0.02em;
 }
 .export-btn:hover {
-  background: #2980b9;
+  background: var(--accent-hover);
+  box-shadow: 0 4px 24px var(--accent-glow);
+  transform: translateY(-1px);
 }
 
 /* 明信片导出模板 */
@@ -263,19 +374,19 @@ function close() {
 .postcard-body h2 {
   margin: 0 0 12px;
   font-size: 22px;
-  color: #2c3e50;
+  color: #2c2420;
 }
 .postcard-meta {
   display: flex;
   gap: 20px;
   font-size: 14px;
-  color: #888;
+  color: #8a7e74;
   margin-bottom: 16px;
 }
 .postcard-story {
   font-size: 15px;
   line-height: 1.8;
-  color: #555;
+  color: #5a4e44;
   margin: 0 0 20px;
 }
 .postcard-footer {

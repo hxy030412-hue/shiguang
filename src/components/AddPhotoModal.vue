@@ -146,7 +146,8 @@ function close() {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 200;
   display: flex;
   align-items: center;
@@ -159,19 +160,25 @@ function close() {
 }
 
 .modal-content {
-  background: #fff;
-  border-radius: 16px;
+  background: var(--surface);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
   padding: 36px;
   width: 560px;
   max-width: 92%;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
+  box-shadow: var(--shadow-lg);
+  transition: background 0.5s;
 }
 h2 {
   margin: 0 0 28px;
   font-size: 22px;
-  color: #2c3e50;
+  color: var(--text);
+  font-weight: 600;
 }
 .close-btn {
   position: absolute;
@@ -180,10 +187,11 @@ h2 {
   background: none;
   border: none;
   font-size: 28px;
-  color: #999;
+  color: var(--text-muted);
   cursor: pointer;
+  transition: color 0.3s;
 }
-.close-btn:hover { color: #333; }
+.close-btn:hover { color: var(--text); }
 
 .form-row {
   display: flex;
@@ -197,50 +205,59 @@ h2 {
 label {
   display: block;
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
   margin-bottom: 6px;
 }
 input, textarea {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
   font-size: 14px;
-  background: #fafafa;
-  transition: border-color 0.3s;
+  background: var(--input-bg);
+  color: var(--text);
+  transition: border-color 0.3s, box-shadow 0.3s;
   box-sizing: border-box;
   font-family: inherit;
 }
 input:focus, textarea:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
 }
 textarea { resize: vertical; }
 
 .upload-area {
-  border: 2px dashed #ddd;
-  border-radius: 12px;
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-md);
   overflow: hidden;
   cursor: pointer;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s, background 0.3s;
   min-height: 160px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--input-bg);
 }
-.upload-area:hover { border-color: #3498db; }
+.upload-area:hover {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
 .upload-placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  color: #aaa;
+  color: var(--text-muted);
   font-size: 14px;
 }
 .upload-icon {
   font-size: 36px;
   line-height: 1;
-  color: #ccc;
+  color: var(--border-strong);
 }
 .preview {
   width: 100%;
@@ -250,21 +267,25 @@ textarea { resize: vertical; }
 }
 
 .error {
-  color: #e74c3c;
+  color: var(--error);
   font-size: 13px;
   margin: 0 0 12px;
 }
 .submit-btn {
   width: 100%;
   padding: 12px;
-  background: #3498db;
+  background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 16px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background 0.3s, box-shadow 0.3s;
+  box-shadow: 0 2px 12px var(--accent-glow);
 }
-.submit-btn:hover { background: #2980b9; }
+.submit-btn:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
 .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>

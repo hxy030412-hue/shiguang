@@ -1,20 +1,18 @@
 <template>
-  <nav class="navbar" :class="{ dark: darkMode }">
-    <router-link to="/" class="logo">📷 拾光</router-link>
+  <nav class="navbar">
+    <router-link to="/" class="logo">拾光</router-link>
     <div class="nav-links">
       <router-link to="/" class="nav-link" active-class="active" exact>首页</router-link>
-      <router-link to="/map" class="nav-link" active-class="active">足迹地图</router-link>
+      <router-link to="/map" class="nav-link" active-class="active">足迹</router-link>
       <router-link to="/settings" class="nav-link" active-class="active">设置</router-link>
     </div>
     <button class="add-btn" @click="$emit('add-photo')">+</button>
     <div class="nav-right">
       <button class="theme-btn" @click="$emit('toggle-dark')">
-        {{ darkMode ? '☀️' : '🌙' }}
+        {{ darkMode ? '☀' : '☾' }}
       </button>
-      <div class="user-info">
-        <span class="username">{{ user?.nickname || user?.username }}</span>
-        <button class="logout-btn" @click="$emit('logout')">退出</button>
-      </div>
+      <span class="username">{{ user?.nickname || user?.username }}</span>
+      <button class="logout-btn" @click="$emit('logout')">退出</button>
     </div>
   </nav>
 </template>
@@ -33,56 +31,47 @@ defineEmits(['toggle-dark', 'logout', 'add-photo'])
   align-items: center;
   padding: 0 32px;
   height: 64px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
+  background: var(--surface);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 100;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
+  border-bottom: 1px solid var(--glass-border);
   transition: background 0.5s, box-shadow 0.5s;
-}
-.navbar.dark {
-  background: rgba(30, 26, 22, 0.9);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 
 .logo {
-  font-size: 20px;
-  font-weight: 700;
-  color: #2c3e50;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text);
   text-decoration: none;
+  letter-spacing: 0.12em;
   transition: color 0.5s;
-}
-.navbar.dark .logo {
-  color: #e8d5b7;
 }
 
 .nav-links {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   margin-left: 48px;
 }
 .nav-link {
   padding: 8px 18px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   text-decoration: none;
   font-size: 14px;
-  color: #666;
+  color: var(--text-muted);
   transition: all 0.3s;
 }
-.navbar.dark .nav-link {
-  color: #a09080;
-}
 .nav-link:hover {
-  background: rgba(0,0,0,0.05);
-}
-.navbar.dark .nav-link:hover {
-  background: rgba(255,255,255,0.05);
+  background: var(--accent-glow);
+  color: var(--text-secondary);
 }
 .nav-link.active {
-  background: #3498db;
+  background: var(--accent);
   color: #fff;
 }
 
@@ -94,21 +83,16 @@ defineEmits(['toggle-dark', 'logout', 'add-photo'])
 }
 .theme-btn {
   padding: 8px 12px;
-  background: #f0f0f0;
-  border: none;
-  border-radius: 8px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   font-size: 18px;
   cursor: pointer;
-  transition: background 0.3s;
-}
-.navbar.dark .theme-btn {
-  background: #3a332a;
+  transition: all 0.3s;
 }
 .theme-btn:hover {
-  background: #e0e0e0;
-}
-.navbar.dark .theme-btn:hover {
-  background: #4a433a;
+  background: var(--accent-glow);
+  border-color: var(--accent);
 }
 
 .user-info {
@@ -118,47 +102,42 @@ defineEmits(['toggle-dark', 'logout', 'add-photo'])
 }
 .username {
   font-size: 14px;
-  color: #555;
-}
-.navbar.dark .username {
-  color: #c0a888;
+  color: var(--text-secondary);
 }
 .logout-btn {
   padding: 6px 14px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
   background: transparent;
   cursor: pointer;
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
   transition: all 0.3s;
 }
-.navbar.dark .logout-btn {
-  border-color: #3a332a;
-  color: #a09080;
-}
 .logout-btn:hover {
-  border-color: #e74c3c;
-  color: #e74c3c;
+  border-color: var(--error);
+  color: var(--error);
 }
 
 .add-btn {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #3498db;
+  background: var(--accent);
   color: #fff;
   border: none;
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.3s, transform 0.2s;
+  transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 12px var(--accent-glow);
 }
 .add-btn:hover {
-  background: #2980b9;
+  background: var(--accent-hover);
   transform: scale(1.1);
+  box-shadow: 0 4px 20px var(--accent-glow);
 }
 </style>
