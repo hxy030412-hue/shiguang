@@ -1,6 +1,6 @@
 <template>
   <nav class="navbar">
-    <router-link to="/" class="logo">拾光</router-link>
+    <router-link to="/" class="logo">📷 拾光</router-link>
     <div class="nav-links">
       <router-link to="/" class="nav-link" active-class="active" exact>首页</router-link>
       <router-link to="/map" class="nav-link" active-class="active">足迹</router-link>
@@ -49,7 +49,8 @@ defineEmits(['toggle-dark', 'logout', 'add-photo'])
   font-weight: 400;
   color: var(--text);
   text-decoration: none;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--tracking-wider);
+  font-family: var(--font-serif);
   transition: color 0.5s;
 }
 

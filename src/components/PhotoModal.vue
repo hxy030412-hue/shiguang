@@ -7,8 +7,12 @@
     >
       <div class="modal-shell" ref="shellEl" :style="shellStyle">
         <!-- 照片主体 -->
-        <div class="photo-stage" ref="photoEl" :style="photoStyle">
-          <img :src="photo.url" :alt="photo.title" />
+        <div class="photo-stage" ref="photoEl">
+          <img :src="photo.url" :alt="photo.title" :style="imgStyle" />
+          <!-- 标题浮层 — 展开时显示 -->
+          <div class="photo-title-float" :class="{ show: phase >= 2 }">
+            <span>{{ photo.title }}</span>
+          </div>
         </div>
 
         <!-- 信息面板 -->
@@ -20,10 +24,10 @@
           </button>
 
           <div class="info-scroll">
-            <h2>{{ photo.title }}</h2>
+            <h2 class="info-title">{{ photo.title }}</h2>
 
             <div class="meta-row">
-              <div class="meta-item">
+              <div class="meta-item" v-if="photo.date">
                 <span class="meta-icon">📅</span>
                 <span>{{ photo.date }}</span>
               </div>
@@ -80,30 +84,30 @@ const emit = defineEmits(['close'])
 const shellEl = ref(null)
 const photoEl = ref(null)
 const postcardEl = ref(null)
-const phase = ref(0) // 0=init, 1=expanding, 2=settled
+const phase = ref(0)
 const closing = ref(false)
+const imgRevealed = ref(false)
 
-// Apple-style easing: fast start, gentle deceleration with slight overshoot
-const EASE_OUT = 'cubic-bezier(0.2, 0.8, 0.15, 1)'
-const EASE_IN_OUT = 'cubic-bezier(0.4, 0, 0.1, 1)'
+const EASE_EXPAND = 'cubic-bezier(0.16, 1, 0.3, 1)'
+const EASE_CLOSE = 'cubic-bezier(0.4, 0, 0.2, 1)'
+const EASE_SPRING = 'cubic-bezier(0.34, 1.56, 0.64, 1)'
 
 const shellStyle = computed(() => {
   if (!props.originRect) return {}
   const r = props.originRect
 
   if (phase.value === 0) {
-    // 起始：卡片位置
     return {
       left: r.left + 'px',
       top: r.top + 'px',
       width: r.width + 'px',
       height: r.height + 'px',
-      borderRadius: '8px',
-      opacity: '1'
+      borderRadius: '6px',
+      opacity: '1',
+      transform: 'scale(1)'
     }
   }
   if (phase.value === 1) {
-    // 展开中：飞向中心
     return {
       left: '50%',
       top: '50%',
@@ -112,11 +116,10 @@ const shellStyle = computed(() => {
       height: '88vh',
       borderRadius: '16px',
       opacity: '1',
-      transform: 'translate(-50%, -50%)',
-      transition: `all 0.65s ${EASE_OUT}`
+      transform: 'translate(-50%, -50%) scale(1)',
+      transition: `left 0.7s ${EASE_EXPAND}, top 0.7s ${EASE_EXPAND}, width 0.7s ${EASE_EXPAND}, height 0.7s ${EASE_EXPAND}, border-radius 0.7s ${EASE_EXPAND}, opacity 0.3s ease, transform 0.7s ${EASE_EXPAND}`
     }
   }
-  // settled
   return {
     left: '50%',
     top: '50%',
@@ -125,33 +128,41 @@ const shellStyle = computed(() => {
     height: '88vh',
     borderRadius: '16px',
     opacity: '1',
-    transform: 'translate(-50%, -50%)'
+    transform: 'translate(-50%, -50%) scale(1)'
   }
 })
 
-const photoStyle = computed(() => {
-  if (phase.value < 2) return { opacity: '1' }
+const imgStyle = computed(() => {
+  if (phase.value < 2) {
+    return {
+      transform: 'scale(1.08)',
+      filter: 'brightness(0.9)',
+      transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1), filter 0.6s ease'
+    }
+  }
   return {
-    opacity: '1',
-    transition: 'opacity 0.4s ease'
+    transform: 'scale(1)',
+    filter: 'brightness(1)',
+    transition: 'transform 1.2s cubic-bezier(0.16,1,0.3,1), filter 0.8s ease'
   }
 })
 
 onMounted(async () => {
   if (!props.originRect) {
     phase.value = 2
+    imgRevealed.value = true
     return
   }
+  document.body.style.overflow = 'hidden'
   await nextTick()
-  // 让浏览器记录起始位置
   shellEl.value?.offsetHeight
 
   requestAnimationFrame(() => {
     phase.value = 1
-    // 展开动画完成后显示信息面板
     setTimeout(() => {
       phase.value = 2
-    }, 500)
+      setTimeout(() => { imgRevealed.value = true }, 300)
+    }, 600)
   })
 })
 
@@ -161,22 +172,21 @@ function close() {
 
   if (props.originRect && shellEl.value) {
     const r = props.originRect
-    // 先隐藏信息面板
     phase.value = 1
+    imgRevealed.value = false
 
     setTimeout(() => {
-      // 缩回卡片位置
-      shellEl.value.style.transition = `all 0.45s ${EASE_IN_OUT}`
-      shellEl.value.style.left = r.left + 'px'
-      shellEl.value.style.top = r.top + 'px'
-      shellEl.value.style.width = r.width + 'px'
-      shellEl.value.style.height = r.height + 'px'
-      shellEl.value.style.borderRadius = '8px'
-      shellEl.value.style.transform = 'none'
-      shellEl.value.style.opacity = '0'
-
-      setTimeout(() => emit('close'), 450)
-    }, 200)
+      const el = shellEl.value
+      el.style.transition = `left 0.5s ${EASE_CLOSE}, top 0.5s ${EASE_CLOSE}, width 0.5s ${EASE_CLOSE}, height 0.5s ${EASE_CLOSE}, border-radius 0.5s ${EASE_CLOSE}, opacity 0.4s ease 0.1s, transform 0.5s ${EASE_CLOSE}`
+      el.style.left = r.left + 'px'
+      el.style.top = r.top + 'px'
+      el.style.width = r.width + 'px'
+      el.style.height = r.height + 'px'
+      el.style.borderRadius = '6px'
+      el.style.transform = 'scale(1)'
+      el.style.opacity = '0'
+      setTimeout(() => emit('close'), 500)
+    }, 150)
   } else {
     emit('close')
   }
@@ -206,25 +216,33 @@ onUnmounted(() => {
   inset: 0;
   z-index: 200;
   opacity: 0;
-  transition: opacity 0.4s ease;
   background: rgba(10, 8, 6, 0);
+  transition: opacity 0.4s ease, background 0.6s ease;
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
 }
 .modal-mask.mask-visible {
   opacity: 1;
-  background: rgba(10, 8, 6, 0.55);
+  background: rgba(10, 8, 6, 0.45);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
 }
 .modal-mask.mask-full {
-  background: rgba(10, 8, 6, 0.7);
-  transition: opacity 0.3s ease, background 0.5s ease;
+  background: rgba(10, 8, 6, 0.65);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  transition: opacity 0.3s ease, background 0.8s ease, backdrop-filter 0.8s ease;
 }
 
 .modal-shell {
   position: fixed;
   overflow: hidden;
   display: flex;
+  z-index: 201;
   box-shadow:
-    0 8px 40px rgba(0, 0, 0, 0.2),
-    0 24px 80px rgba(0, 0, 0, 0.15),
+    0 4px 20px rgba(0, 0, 0, 0.15),
+    0 16px 60px rgba(0, 0, 0, 0.2),
+    0 32px 100px rgba(0, 0, 0, 0.15),
     0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
@@ -241,6 +259,30 @@ onUnmounted(() => {
   height: 100%;
   object-fit: cover;
   display: block;
+  will-change: transform, filter;
+}
+
+/* 标题浮层 */
+.photo-title-float {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 60px 32px 24px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.5));
+  color: #fff;
+  font-size: var(--text-xl);
+  font-weight: 400;
+  font-family: var(--font-serif);
+  letter-spacing: var(--tracking-wide);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.6s ease 0.1s, transform 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s;
+  pointer-events: none;
+}
+.photo-title-float.show {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* 信息面板 */
@@ -251,8 +293,8 @@ onUnmounted(() => {
   flex-direction: column;
   position: relative;
   opacity: 0;
-  transform: translateX(30px);
-  transition: opacity 0.5s ease 0.1s, transform 0.5s cubic-bezier(0.2, 0.8, 0.15, 1) 0.1s;
+  transform: translateX(40px);
+  transition: opacity 0.6s ease 0.05s, transform 0.7s cubic-bezier(0.16,1,0.3,1) 0.05s;
 }
 .info-panel.info-visible {
   opacity: 1;
@@ -276,11 +318,19 @@ onUnmounted(() => {
   color: var(--text-muted);
   z-index: 10;
   transition: all 0.3s;
+  opacity: 0;
+  transform: scale(0.8);
+}
+.info-visible .close-btn {
+  opacity: 1;
+  transform: scale(1);
+  transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.3s;
 }
 .close-btn:hover {
   background: var(--accent-glow);
   border-color: var(--accent);
   color: var(--accent);
+  transform: scale(1.08) !important;
 }
 
 .info-scroll {
@@ -289,13 +339,21 @@ onUnmounted(() => {
   padding: 36px 28px;
 }
 
-.info-scroll h2 {
+.info-title {
   margin: 0 0 24px;
-  font-size: 24px;
-  font-weight: 600;
+  font-size: var(--text-2xl);
+  font-weight: 500;
+  font-family: var(--font-serif);
   color: var(--text);
-  letter-spacing: 0.01em;
-  line-height: 1.3;
+  letter-spacing: var(--tracking-normal);
+  line-height: var(--leading-tight);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.5s ease 0.2s, transform 0.5s cubic-bezier(0.16,1,0.3,1) 0.2s;
+}
+.info-visible .info-title {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .meta-row {
@@ -303,6 +361,13 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 12px;
   margin-bottom: 24px;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.5s ease 0.3s, transform 0.5s cubic-bezier(0.16,1,0.3,1) 0.3s;
+}
+.info-visible .meta-row {
+  opacity: 1;
+  transform: translateY(0);
 }
 .meta-item {
   display: flex;
@@ -320,13 +385,21 @@ onUnmounted(() => {
 .story {
   padding-top: 24px;
   border-top: 1px solid var(--border);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.5s ease 0.4s, transform 0.5s cubic-bezier(0.16,1,0.3,1) 0.4s;
+}
+.info-visible .story {
+  opacity: 1;
+  transform: translateY(0);
 }
 .story p {
-  font-size: 15px;
-  line-height: 1.85;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
   color: var(--text-secondary);
   margin: 0;
-  letter-spacing: 0.01em;
+  letter-spacing: var(--tracking-normal);
+  font-family: var(--font-serif);
 }
 
 .export-btn {
@@ -343,11 +416,18 @@ onUnmounted(() => {
   transition: all 0.3s;
   box-shadow: 0 2px 16px var(--accent-glow);
   letter-spacing: 0.02em;
+  opacity: 0;
+  transform: translateY(12px);
+}
+.info-visible .export-btn {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.5s ease 0.5s, transform 0.5s cubic-bezier(0.16,1,0.3,1) 0.5s, background 0.3s, box-shadow 0.3s;
 }
 .export-btn:hover {
   background: var(--accent-hover);
   box-shadow: 0 4px 24px var(--accent-glow);
-  transform: translateY(-1px);
+  transform: translateY(-1px) !important;
 }
 
 /* 明信片导出模板 */

@@ -39,7 +39,7 @@
       @mousedown="onDragStart($event, photo)"
     >
       <div class="card-inner">
-        <img :src="photo.url" :alt="photo.title" loading="lazy" />
+        <img :src="photo.url" :alt="photo.title" loading="lazy" :style="{ height: photo.imgH + 'px' }" />
         <div class="polaroid-label">
           <span class="polaroid-title">{{ photo.title }}</span>
           <span class="polaroid-date">{{ photo.date }}</span>
@@ -129,44 +129,64 @@ function onDragEnd() {
   document.removeEventListener('mouseleave', onDragEnd)
 }
 
-// 更有机的重叠布局
+// 有机散落布局 — 自由散乱分布
 function calcPositions() {
   const container = document.querySelector('.scatter-container')
   if (!container || !props.photos.length) return
-  const cw = container.clientWidth - 40
+  const cw = container.clientWidth
+  const ch = Math.max(container.clientHeight, 1600)
+  const photos = props.photos
+  const placed = []
 
-  // 更有机的分布，让照片重叠
-  const rows = []
-  const rowHeight = 260
-  let currentY = 100
+  function seeded(i, seed) {
+    const x = Math.sin(i * 9301 + seed * 49297) * 49297
+    return x - Math.floor(x)
+  }
 
-  positionedPhotos.value = props.photos.map((photo, i) => {
-    // 每行放 3-4 张，有重叠
-    const rowCount = 3 + (i % 2)
-    const row = Math.floor(i / rowCount)
-    const col = i % rowCount
+  positionedPhotos.value = photos.map((photo, i) => {
+    const sizeRoll = seeded(i, 1)
+    const w = sizeRoll < 0.25 ? 180 : sizeRoll < 0.6 ? 220 : sizeRoll < 0.85 ? 260 : 300
+    const imgH = w < 200 ? 150 : w < 240 ? 180 : 210
 
-    // 交错分布，不是整齐网格
-    const baseX = (col / rowCount) * cw
-    const jitterX = ((i * 37 + 13) % 60) - 30
-    const jitterY = ((i * 23 + 7) % 50) - 25
+    const rotBase = (seeded(i, 2) - 0.5) * 20
+    const rotate = Math.round(rotBase * 10) / 10
 
-    const x = Math.max(20, Math.min(cw - 260, baseX + jitterX))
-    const y = currentY + row * rowHeight + jitterY
+    const margin = 40
+    const usableW = cw - w - margin * 2
+    const usableH = ch - 300
 
-    // 尺寸变化更丰富
-    const widths = [200, 230, 260, 210, 245]
-    const w = widths[i % widths.length]
+    // 随机撒在整个画布范围
+    let bestX = margin + seeded(i, 3) * usableW
+    let bestY = 80 + seeded(i, 4) * usableH * 0.6
 
-    // 旋转角度更自然
-    const rotations = [-8, 5, -3, 7, -6, 4, -2, 8, -5, 3]
-    const rotate = rotations[i % rotations.length]
+    // 多轮排斥，把重叠的推开
+    for (let round = 0; round < 4; round++) {
+      for (const p of placed) {
+        const dx = bestX - p.x
+        const dy = bestY - p.y
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1
+        const minDist = (w + p.w) * 0.45
+        if (dist < minDist) {
+          const push = (minDist - dist) * 0.5
+          bestX += (dx / dist) * push
+          bestY += (dy / dist) * push
+        }
+      }
+    }
 
-    // z-index 让部分卡片在上，部分在下
-    const z = 5 + (i % 7)
+    bestX = Math.max(margin, Math.min(cw - w - margin, bestX))
+    bestY = Math.max(60, bestY)
 
-    return { ...photo, x, y, w, rotate, z }
+    placed.push({ x: bestX, y: bestY, w })
+
+    const z = Math.floor(seeded(i, 5) * 15) + 1
+
+    return { ...photo, x: bestX, y: bestY, w, imgH, rotate, z }
   })
+
+  // 动态撑高容器
+  const maxY = Math.max(...placed.map(p => p.y + 300))
+  container.style.minHeight = maxY + 'px'
 }
 
 watch(() => props.photos, async () => {
@@ -178,7 +198,7 @@ watch(() => props.photos, async () => {
 <style scoped>
 .scatter-container {
   position: relative;
-  min-height: 1800px;
+  min-height: 100vh;
   padding: 20px;
   overflow-x: hidden;
   transition: background 0.5s ease;
@@ -336,7 +356,6 @@ watch(() => props.photos, async () => {
   width: 100%;
   display: block;
   object-fit: cover;
-  height: 180px;
   border-radius: 2px;
 }
 
@@ -348,21 +367,23 @@ watch(() => props.photos, async () => {
   gap: 2px;
 }
 .polaroid-title {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: #2c2420;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--tracking-normal);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: var(--font-serif);
 }
 .scatter-container.dark .polaroid-title {
   color: #e8ddd0;
 }
 .polaroid-date {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: #8a7e74;
   font-style: italic;
+  letter-spacing: var(--tracking-wide);
 }
 
 /* 悬浮时显示地点 */

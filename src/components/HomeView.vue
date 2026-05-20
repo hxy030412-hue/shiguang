@@ -179,17 +179,18 @@ function onSelectGrid({ photo, rect }) {
   opacity: 0.4;
 }
 .empty-state h3 {
-  font-size: 18px;
+  font-size: var(--text-xl);
   color: var(--text);
   margin-bottom: 8px;
   font-weight: 400;
-  letter-spacing: 0.06em;
+  font-family: var(--font-serif);
+  letter-spacing: var(--tracking-wide);
 }
 .empty-state p {
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--text-muted);
   max-width: 260px;
-  line-height: 1.7;
-  letter-spacing: 0.02em;
+  line-height: var(--leading-relaxed);
+  letter-spacing: var(--tracking-normal);
 }
 </style>

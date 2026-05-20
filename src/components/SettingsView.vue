@@ -112,9 +112,11 @@ async function save() {
 
 h2 {
   margin: 0 0 32px;
-  font-size: 24px;
+  font-size: var(--text-2xl);
   color: var(--text);
-  font-weight: 600;
+  font-weight: 500;
+  font-family: var(--font-serif);
+  letter-spacing: var(--tracking-normal);
 }
 
 .avatar-section {

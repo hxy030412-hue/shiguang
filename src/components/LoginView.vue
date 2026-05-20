@@ -125,16 +125,17 @@ async function submit() {
   text-align: center;
 }
 .brand h1 {
-  font-size: 42px;
+  font-size: var(--text-4xl);
   font-weight: 300;
+  font-family: var(--font-serif);
   color: var(--text);
-  letter-spacing: 0.15em;
+  letter-spacing: var(--tracking-wider);
   margin: 0 0 12px;
 }
 .tagline {
   color: var(--text-muted);
-  font-size: 15px;
-  letter-spacing: 0.08em;
+  font-size: var(--text-base);
+  letter-spacing: var(--tracking-wide);
   font-weight: 300;
 }
 

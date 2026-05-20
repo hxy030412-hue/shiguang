@@ -6,7 +6,7 @@
         <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch" seed="5"/>
         <feColorMatrix type="saturate" values="0"/>
       </filter>
-      <rect width="100%" height="100%" filter="url(#grain)" opacity="0.025"/>
+      <rect width="100%" height="100%" filter="url(#grain)" opacity="0.02"/>
     </svg>
 
     <LoginView v-if="!user" @login-success="onLogin" />
@@ -118,54 +118,77 @@ onMounted(async () => {
 
 <style>
 :root {
-  --bg: #f8f5f0;
-  --bg-gradient: radial-gradient(ellipse at 50% 30%, #faf8f3 0%, #f0ece4 50%, #e8e3da 100%);
-  --surface: rgba(255, 255, 255, 0.72);
-  --surface-solid: #fff;
-  --accent: #c9854d;
-  --accent-hover: #b87339;
-  --accent-glow: rgba(201, 133, 77, 0.15);
-  --text: #2c2420;
-  --text-secondary: #5a4e44;
-  --text-muted: #8a7e74;
-  --border: rgba(0, 0, 0, 0.08);
-  --border-strong: rgba(0, 0, 0, 0.15);
-  --input-bg: rgba(255, 255, 255, 0.6);
-  --input-border: rgba(0, 0, 0, 0.1);
-  --shadow-sm: 0 2px 8px rgba(44, 36, 32, 0.06);
-  --shadow-md: 0 8px 32px rgba(44, 36, 32, 0.1);
-  --shadow-lg: 0 16px 48px rgba(44, 36, 32, 0.15);
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06);
-  --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.25);
-  --error: #d44;
-  --success: #4a8;
+  --bg: #faf6f0;
+  --bg-gradient: radial-gradient(ellipse at 40% 25%, #fdf9f3 0%, #f5efe5 40%, #ede5d8 80%, #e4dbd0 100%);
+  --surface: rgba(255, 253, 248, 0.78);
+  --surface-solid: #fffcf6;
+  --accent: #c27a3e;
+  --accent-hover: #a86830;
+  --accent-glow: rgba(194, 122, 62, 0.14);
+  --text: #2a2018;
+  --text-secondary: #5c4e40;
+  --text-muted: #908070;
+  --border: rgba(140, 110, 70, 0.1);
+  --border-strong: rgba(140, 110, 70, 0.18);
+  --input-bg: rgba(255, 250, 242, 0.7);
+  --input-border: rgba(160, 130, 90, 0.12);
+  --shadow-sm: 0 2px 10px rgba(60, 44, 28, 0.06);
+  --shadow-md: 0 8px 36px rgba(60, 44, 28, 0.1);
+  --shadow-lg: 0 20px 56px rgba(60, 44, 28, 0.14);
+  --shadow-card: 0 4px 24px rgba(60, 44, 28, 0.08), 0 1px 4px rgba(60, 44, 28, 0.04);
+  --shadow-card-hover: 0 14px 44px rgba(60, 44, 28, 0.16), 0 2px 8px rgba(60, 44, 28, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --error: #c44;
+  --success: #5a8;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 20px;
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-serif: 'Noto Serif SC', 'Source Han Serif CN', 'Songti SC', Georgia, 'Times New Roman', serif;
+  --font-display: var(--font-sans);
+
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
+  --text-2xl: 26px;
+  --text-3xl: 34px;
+  --text-4xl: 44px;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.85;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0.01em;
+  --tracking-wide: 0.06em;
+  --tracking-wider: 0.12em;
 }
 
 body.dark-mode {
-  --bg: #1a1614;
-  --bg-gradient: radial-gradient(ellipse at 50% 30%, #2a2520 0%, #1e1a16 50%, #151210 100%);
-  --surface: rgba(30, 26, 22, 0.75);
-  --surface-solid: #1e1a16;
+  --bg: #181310;
+  --bg-gradient: radial-gradient(ellipse at 40% 25%, #28221c 0%, #1e1814 40%, #161210 80%, #110e0c 100%);
+  --surface: rgba(32, 26, 22, 0.78);
+  --surface-solid: #1e1814;
   --accent: #d4a06a;
-  --accent-hover: #c99050;
-  --accent-glow: rgba(212, 160, 106, 0.12);
-  --text: #e8ddd0;
-  --text-secondary: #bfb0a0;
-  --text-muted: #8a7e74;
-  --border: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --input-bg: rgba(42, 37, 32, 0.8);
-  --input-border: rgba(255, 255, 255, 0.08);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 200, 120, 0.04);
-  --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 200, 120, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --accent-hover: #c08848;
+  --accent-glow: rgba(212, 160, 106, 0.1);
+  --text: #ece0d2;
+  --text-secondary: #c0ad98;
+  --text-muted: #8a7c6c;
+  --border: rgba(255, 220, 160, 0.06);
+  --border-strong: rgba(255, 220, 160, 0.12);
+  --input-bg: rgba(38, 32, 26, 0.85);
+  --input-border: rgba(255, 220, 160, 0.08);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 8px 36px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 20px 56px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(212, 160, 106, 0.04);
+  --shadow-card-hover: 0 14px 44px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(212, 160, 106, 0.08);
+  --glass-border: rgba(255, 220, 160, 0.06);
   --error: #e66;
   --success: #6b8;
 }
@@ -176,15 +199,45 @@ body.dark-mode {
   box-sizing: border-box;
 }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
-  background: var(--bg);
+  font-family: var(--font-sans);
+  background: var(--bg-gradient);
   color: var(--text);
   min-height: 100vh;
-  transition: background 0.5s, color 0.5s;
+  transition: background 0.6s, color 0.5s;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  letter-spacing: 0.01em;
-  line-height: 1.6;
+  font-size: var(--text-base);
+  letter-spacing: var(--tracking-normal);
+  line-height: var(--leading-normal);
+}
+
+/* Typography hierarchy */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  color: var(--text);
+}
+h1 { font-size: var(--text-3xl); font-weight: 500; letter-spacing: var(--tracking-wide); }
+h2 { font-size: var(--text-2xl); }
+h3 { font-size: var(--text-xl); }
+h4 { font-size: var(--text-lg); }
+
+p {
+  line-height: var(--leading-relaxed);
+  letter-spacing: var(--tracking-normal);
+}
+
+small, .text-sm {
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-normal);
+}
+
+.text-muted {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-wide);
 }
 
 /* 胶片颗粒 */
@@ -194,28 +247,28 @@ body {
   width: 100%; height: 100%;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.6;
-  mix-blend-mode: overlay;
+  opacity: 0.5;
+  mix-blend-mode: soft-light;
 }
 
 /* 滚动条 */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
+  background: rgba(160, 130, 90, 0.2);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+  background: rgba(160, 130, 90, 0.35);
 }
 
 /* 选中文本 */
 ::selection {
-  background: var(--accent-glow);
+  background: rgba(194, 122, 62, 0.18);
   color: var(--accent);
 }
 
@@ -223,19 +276,25 @@ body {
 a {
   color: var(--accent);
   text-decoration: none;
+  transition: color 0.3s;
+}
+a:hover {
+  color: var(--accent-hover);
 }
 
 /* Page transitions */
-.page-enter-active,
+.page-enter-active {
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
 .page-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 .page-enter-from {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(12px);
 }
 .page-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translateY(-6px);
 }
 </style>
