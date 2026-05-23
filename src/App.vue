@@ -1,7 +1,10 @@
 <template>
   <div class="app">
-    <!-- 粒子宇宙背景 -->
-    <ParticleBackground v-if="darkMode" />
+    <!-- 交互粒子宇宙 -->
+    <InteractiveParticles
+      v-if="darkMode"
+      :scrollY="scrollY"
+    />
 
     <!-- 自定义光标 -->
     <CustomCursor v-if="darkMode" />
@@ -53,7 +56,7 @@ import { ref, watch, onMounted } from 'vue'
 import NavBar from './components/NavBar.vue'
 import LoginView from './components/LoginView.vue'
 import AddPhotoModal from './components/AddPhotoModal.vue'
-import ParticleBackground from './components/ParticleBackground.vue'
+import InteractiveParticles from './components/InteractiveParticles.vue'
 import CustomCursor from './components/CustomCursor.vue'
 import { api } from './api'
 
@@ -63,6 +66,7 @@ const photos = ref([])
 const showAdd = ref(false)
 const hasMore = ref(true)
 const loadingPhotos = ref(true)
+const scrollY = ref(0)
 let loadingMore = false
 
 watch(darkMode, (val) => {
@@ -110,8 +114,13 @@ function logout() {
   photos.value = []
 }
 
+function onScroll() {
+  scrollY.value = window.scrollY
+}
+
 onMounted(async () => {
   if (darkMode.value) document.body.classList.add('dark-mode')
+  window.addEventListener('scroll', onScroll, { passive: true })
   const token = localStorage.getItem('token')
   if (!token) return
   try {
