@@ -3,6 +3,9 @@
     <!-- 粒子宇宙背景 -->
     <ParticleBackground v-if="darkMode" />
 
+    <!-- 自定义光标 -->
+    <CustomCursor v-if="darkMode" />
+
     <!-- 全局胶片颗粒 -->
     <svg class="film-grain" xmlns="http://www.w3.org/2000/svg">
       <filter id="grain">
@@ -51,6 +54,7 @@ import NavBar from './components/NavBar.vue'
 import LoginView from './components/LoginView.vue'
 import AddPhotoModal from './components/AddPhotoModal.vue'
 import ParticleBackground from './components/ParticleBackground.vue'
+import CustomCursor from './components/CustomCursor.vue'
 import { api } from './api'
 
 const darkMode = ref(localStorage.getItem('darkMode') === 'true')
@@ -216,6 +220,10 @@ body {
 }
 body.dark-mode {
   background: transparent;
+  cursor: none;
+}
+body.dark-mode * {
+  cursor: none;
 }
 
 /* Typography hierarchy */
