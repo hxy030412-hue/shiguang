@@ -1,5 +1,8 @@
 <template>
   <div class="app">
+    <!-- 粒子宇宙背景 -->
+    <ParticleBackground v-if="darkMode" />
+
     <!-- 全局胶片颗粒 -->
     <svg class="film-grain" xmlns="http://www.w3.org/2000/svg">
       <filter id="grain">
@@ -47,6 +50,7 @@ import { ref, watch, onMounted } from 'vue'
 import NavBar from './components/NavBar.vue'
 import LoginView from './components/LoginView.vue'
 import AddPhotoModal from './components/AddPhotoModal.vue'
+import ParticleBackground from './components/ParticleBackground.vue'
 import { api } from './api'
 
 const darkMode = ref(localStorage.getItem('darkMode') === 'true')
