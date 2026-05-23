@@ -204,6 +204,9 @@ watch(() => props.photos, async () => {
   transition: background 0.5s ease;
   background: var(--bg-gradient);
 }
+.scatter-container.dark {
+  background: transparent;
+}
 
 /* 纸质噪点 */
 .noise-svg {

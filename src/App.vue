@@ -214,6 +214,9 @@ body {
   letter-spacing: var(--tracking-normal);
   line-height: var(--leading-normal);
 }
+body.dark-mode {
+  background: transparent;
+}
 
 /* Typography hierarchy */
 h1, h2, h3, h4, h5, h6 {

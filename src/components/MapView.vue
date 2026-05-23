@@ -214,6 +214,9 @@ onMounted(initMap)
   overflow: hidden;
   background: var(--bg);
 }
+.map-page.dark {
+  background: transparent;
+}
 
 #map {
   width: 100%;

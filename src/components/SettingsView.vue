@@ -95,6 +95,9 @@ async function save() {
   background: var(--bg);
   transition: background 0.5s;
 }
+.settings-page.dark {
+  background: transparent;
+}
 
 .settings-card {
   background: var(--surface);

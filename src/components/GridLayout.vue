@@ -39,6 +39,9 @@ function onPhotoClick(e, photo) {
   background: var(--bg);
   transition: background 0.5s;
 }
+.grid-container.dark {
+  background: transparent;
+}
 .grid-item {
   break-inside: avoid;
   margin-bottom: 16px;
