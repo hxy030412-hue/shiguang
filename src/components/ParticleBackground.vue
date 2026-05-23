@@ -123,13 +123,13 @@ function init() {
   const h = window.innerHeight
   const dpr = Math.min(window.devicePixelRatio, 1.5)
 
-  // 场景
+  // 场景 — 更淡的雾确保全屏可见
   scene = new THREE.Scene()
-  scene.fog = new THREE.FogExp2(0x050810, 0.0005)
+  scene.fog = new THREE.FogExp2(0x050810, 0.0003)
 
-  // 相机
-  camera = new THREE.PerspectiveCamera(50, w / h, 1, 4000)
-  camera.position.z = 700
+  // 相机 — 更大视野覆盖全屏
+  camera = new THREE.PerspectiveCamera(75, w / h, 1, 4000)
+  camera.position.z = 500
 
   // 渲染器
   renderer = new THREE.WebGLRenderer({
@@ -156,34 +156,34 @@ function init() {
   )
   composer.addPass(bloom)
 
-  // 粒子层
+  // 粒子层 — 更大分布范围覆盖全屏
   // 远景：海量微尘
-  const far = makeLayer(4000, 500, 1500, 0.3, 1.8, 0.15)
+  const far = makeLayer(5000, 300, 2000, 0.3, 1.8, 0.15)
   scene.add(far.mesh)
   layers.push(far)
 
   // 中远景
-  const midFar = makeLayer(1200, 300, 700, 1.0, 3.0, 0.22)
+  const midFar = makeLayer(1500, 200, 800, 1.0, 3.0, 0.22)
   scene.add(midFar.mesh)
   layers.push(midFar)
 
   // 中景
-  const mid = makeLayer(500, 150, 400, 2.0, 4.5, 0.3)
+  const mid = makeLayer(600, 100, 500, 2.0, 4.5, 0.3)
   scene.add(mid.mesh)
   layers.push(mid)
 
   // 近景：大粒子
-  const near = makeLayer(80, 60, 200, 4.0, 8.0, 0.4)
+  const near = makeLayer(100, 50, 250, 4.0, 8.0, 0.4)
   scene.add(near.mesh)
   layers.push(near)
 
   // 极亮星光
-  const bright = makeLayer(25, 100, 500, 8.0, 16.0, 0.5)
+  const bright = makeLayer(40, 80, 600, 8.0, 16.0, 0.5)
   scene.add(bright.mesh)
   layers.push(bright)
 
   // 星云光晕
-  const nebula = makeLayer(150, 40, 160, 15.0, 35.0, 0.12)
+  const nebula = makeLayer(200, 30, 200, 15.0, 35.0, 0.12)
   scene.add(nebula.mesh)
   layers.push(nebula)
 
