@@ -7,97 +7,73 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import * as THREE from 'three'
 
 const container = ref(null)
-let renderer, scene, camera, particles, clock
+let renderer, scene, camera, clock, animId
 let mouseX = 0, mouseY = 0
-let animId
+let groups = []
 
-const PARTICLE_COUNT = 2000
-const COLORS = [
+const PALETTE = [
+  new THREE.Color(0x4a6fa5),  // 钢蓝
+  new THREE.Color(0x6b8fc7),  // 浅蓝
+  new THREE.Color(0x3d5a80),  // 深蓝
+  new THREE.Color(0x98c1d9),  // 冰蓝
   new THREE.Color(0xd4a06a),  // 暖金
-  new THREE.Color(0xc9854d),  // 琥珀
-  new THREE.Color(0xf0d0a0),  // 浅金
-  new THREE.Color(0xe8c090),  // 米金
+  new THREE.Color(0xc9b8a0),  // 米白
+  new THREE.Color(0xe0d0b8),  // 浅金
   new THREE.Color(0xffffff),  // 纯白星光
 ]
 
-function init() {
-  const w = window.innerWidth
-  const h = window.innerHeight
+function createLayer(count, radiusMin, radiusMax, sizeMin, sizeMax, opacity) {
+  const geo = new THREE.BufferGeometry()
+  const pos = new Float32Array(count * 3)
+  const col = new Float32Array(count * 3)
+  const sizes = new Float32Array(count)
 
-  // 场景
-  scene = new THREE.Scene()
-  scene.fog = new THREE.FogExp2(0x0a0806, 0.0008)
-
-  // 相机
-  camera = new THREE.PerspectiveCamera(60, w / h, 1, 2000)
-  camera.position.z = 500
-
-  // 渲染器
-  renderer = new THREE.WebGLRenderer({
-    alpha: true,
-    antialias: false,
-    powerPreference: 'high-performance'
-  })
-  renderer.setSize(w, h)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-  renderer.setClearColor(0x000000, 0)
-  container.value.appendChild(renderer.domElement)
-
-  // 粒子
-  const geometry = new THREE.BufferGeometry()
-  const positions = new Float32Array(PARTICLE_COUNT * 3)
-  const colors = new Float32Array(PARTICLE_COUNT * 3)
-  const sizes = new Float32Array(PARTICLE_COUNT)
-  const speeds = new Float32Array(PARTICLE_COUNT)
-
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
+  for (let i = 0; i < count; i++) {
     const i3 = i * 3
-    // 球形分布
-    const r = 300 + Math.random() * 700
+    const r = radiusMin + Math.random() * (radiusMax - radiusMin)
     const theta = Math.random() * Math.PI * 2
     const phi = Math.acos(2 * Math.random() - 1)
 
-    positions[i3] = r * Math.sin(phi) * Math.cos(theta)
-    positions[i3 + 1] = r * Math.sin(phi) * Math.sin(theta)
-    positions[i3 + 2] = r * Math.cos(phi)
+    pos[i3] = r * Math.sin(phi) * Math.cos(theta)
+    pos[i3 + 1] = r * Math.sin(phi) * Math.sin(theta)
+    pos[i3 + 2] = r * Math.cos(phi)
 
-    // 颜色
-    const color = COLORS[Math.floor(Math.random() * COLORS.length)]
-    colors[i3] = color.r
-    colors[i3 + 1] = color.g
-    colors[i3 + 2] = color.b
+    const c = PALETTE[Math.floor(Math.random() * PALETTE.length)]
+    col[i3] = c.r
+    col[i3 + 1] = c.g
+    col[i3 + 2] = c.b
 
-    // 大小：大部分小，少数大（模拟星光）
-    sizes[i] = Math.random() < 0.05 ? 3 + Math.random() * 4 : 1 + Math.random() * 2
-    speeds[i] = 0.2 + Math.random() * 0.8
+    sizes[i] = sizeMin + Math.random() * (sizeMax - sizeMin)
   }
 
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-  geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1))
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3))
+  geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1))
 
-  // 着色器材质
   const vertexShader = `
     attribute float size;
     varying vec3 vColor;
     varying float vAlpha;
     uniform float uTime;
+    uniform float uSpeed;
 
     void main() {
       vColor = color;
       vec3 pos = position;
 
-      // 缓慢漂浮
-      float drift = sin(uTime * 0.1 + position.x * 0.005) * 8.0;
-      pos.y += drift;
-      pos.x += cos(uTime * 0.08 + position.z * 0.003) * 5.0;
+      // 多层漂浮
+      float drift1 = sin(uTime * uSpeed + position.x * 0.003) * 6.0;
+      float drift2 = cos(uTime * uSpeed * 0.7 + position.z * 0.002) * 4.0;
+      pos.y += drift1 + drift2 * 0.5;
+      pos.x += cos(uTime * uSpeed * 0.5 + position.y * 0.004) * 3.0;
 
-      // 呼吸闪烁
-      float pulse = 0.6 + 0.4 * sin(uTime * 0.5 + position.x * 0.01 + position.y * 0.01);
-      vAlpha = pulse;
+      // 呼吸闪烁 — 每颗星独立节奏
+      float phase = position.x * 0.008 + position.y * 0.006 + position.z * 0.004;
+      float pulse = 0.5 + 0.5 * sin(uTime * 0.4 + phase);
+      vAlpha = pulse * 0.7 + 0.3;
 
       vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-      gl_PointSize = size * (300.0 / -mvPosition.z) * pulse;
+      gl_PointSize = size * (280.0 / -mvPosition.z) * vAlpha;
       gl_Position = projectionMatrix * mvPosition;
     }
   `
@@ -107,21 +83,25 @@ function init() {
     varying float vAlpha;
 
     void main() {
-      // 圆形粒子 + 柔和光晕
       vec2 center = gl_PointCoord - 0.5;
       float dist = length(center);
-      float alpha = smoothstep(0.5, 0.1, dist) * vAlpha * 0.8;
 
-      // 中心更亮
-      float core = smoothstep(0.3, 0.0, dist) * 0.5;
+      // 柔和高斯光晕
+      float glow = exp(-dist * dist * 8.0);
+      float core = exp(-dist * dist * 30.0);
+      float alpha = (glow * 0.5 + core * 0.5) * vAlpha;
 
-      gl_FragColor = vec4(vColor * (1.0 + core), alpha);
+      // 中心加亮
+      vec3 finalColor = vColor * (1.0 + core * 0.8);
+
+      gl_FragColor = vec4(finalColor, alpha);
     }
   `
 
-  const material = new THREE.ShaderMaterial({
+  const mat = new THREE.ShaderMaterial({
     uniforms: {
-      uTime: { value: 0 }
+      uTime: { value: 0 },
+      uSpeed: { value: 0.3 + Math.random() * 0.4 }
     },
     vertexShader,
     fragmentShader,
@@ -131,79 +111,83 @@ function init() {
     blending: THREE.AdditiveBlending
   })
 
-  particles = new THREE.Points(geometry, material)
-  scene.add(particles)
+  const points = new THREE.Points(geo, mat)
+  return { points, mat }
+}
 
-  // 内层星云 — 更密集的暖色光点
-  const nebulaCount = 300
-  const nebulaGeo = new THREE.BufferGeometry()
-  const nebulaPos = new Float32Array(nebulaCount * 3)
-  const nebulaColors = new Float32Array(nebulaCount * 3)
-  const nebulaSizes = new Float32Array(nebulaCount)
+function init() {
+  const w = window.innerWidth
+  const h = window.innerHeight
 
-  for (let i = 0; i < nebulaCount; i++) {
-    const i3 = i * 3
-    const r = 100 + Math.random() * 200
-    const theta = Math.random() * Math.PI * 2
-    const phi = Math.acos(2 * Math.random() - 1)
+  scene = new THREE.Scene()
+  scene.fog = new THREE.FogExp2(0x060a12, 0.0006)
 
-    nebulaPos[i3] = r * Math.sin(phi) * Math.cos(theta)
-    nebulaPos[i3 + 1] = r * Math.sin(phi) * Math.sin(theta)
-    nebulaPos[i3 + 2] = r * Math.cos(phi)
+  camera = new THREE.PerspectiveCamera(55, w / h, 1, 3000)
+  camera.position.z = 600
 
-    const c = new THREE.Color().lerpColors(
-      new THREE.Color(0xd4a06a),
-      new THREE.Color(0xf0d0a0),
-      Math.random()
-    )
-    nebulaColors[i3] = c.r
-    nebulaColors[i3 + 1] = c.g
-    nebulaColors[i3 + 2] = c.b
-
-    nebulaSizes[i] = 8 + Math.random() * 15
-  }
-
-  nebulaGeo.setAttribute('position', new THREE.BufferAttribute(nebulaPos, 3))
-  nebulaGeo.setAttribute('color', new THREE.BufferAttribute(nebulaColors, 3))
-  nebulaGeo.setAttribute('size', new THREE.BufferAttribute(nebulaSizes, 1))
-
-  const nebulaMat = new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 } },
-    vertexShader,
-    fragmentShader,
-    vertexColors: true,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending
+  renderer = new THREE.WebGLRenderer({
+    alpha: true,
+    antialias: false,
+    powerPreference: 'high-performance'
   })
+  renderer.setSize(w, h)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+  renderer.setClearColor(0x000000, 0)
+  container.value.appendChild(renderer.domElement)
 
-  const nebula = new THREE.Points(nebulaGeo, nebulaMat)
-  scene.add(nebula)
+  // 远景层 — 大量微小粒子，缓慢漂移
+  const far = createLayer(3000, 400, 1200, 0.5, 2.0, 0.6)
+  scene.add(far.points)
+  groups.push(far)
+
+  // 中景层 — 中等密度
+  const mid = createLayer(800, 200, 500, 1.5, 3.5, 0.8)
+  scene.add(mid.points)
+  groups.push(mid)
+
+  // 近景层 — 稀疏大粒子，视觉焦点
+  const near = createLayer(120, 80, 250, 3.0, 7.0, 1.0)
+  scene.add(near.points)
+  groups.push(near)
+
+  // 极亮星光 — 少量闪烁亮点
+  const stars = createLayer(30, 100, 600, 5.0, 12.0, 1.0)
+  scene.add(stars.points)
+  groups.push(stars)
+
+  // 内层星云光晕
+  const nebula = createLayer(200, 50, 180, 10.0, 25.0, 0.15)
+  scene.add(nebula.points)
+  groups.push(nebula)
 
   clock = new THREE.Clock()
 
-  function animate() {
-    animId = requestAnimationFrame(animate)
-    const t = clock.getElapsedTime()
-
-    material.uniforms.uTime.value = t
-    nebulaMat.uniforms.uTime.value = t
-
-    // 鼠标视差
-    const targetX = mouseX * 0.05
-    const targetY = mouseY * 0.05
-    camera.position.x += (targetX - camera.position.x) * 0.02
-    camera.position.y += (-targetY - camera.position.y) * 0.02
-    camera.lookAt(scene.position)
-
-    // 缓慢整体旋转
-    particles.rotation.y = t * 0.01
-    nebula.rotation.y = -t * 0.015
-
-    renderer.render(scene, camera)
-  }
-
   animate()
+}
+
+function animate() {
+  animId = requestAnimationFrame(animate)
+  const t = clock.getElapsedTime()
+
+  groups.forEach(g => {
+    g.mat.uniforms.uTime.value = t
+  })
+
+  // 鼠标视差 — 柔和跟焦
+  const tx = mouseX * 30
+  const ty = mouseY * 20
+  camera.position.x += (tx - camera.position.x) * 0.008
+  camera.position.y += (-ty - camera.position.y) * 0.008
+  camera.lookAt(0, 0, 0)
+
+  // 极缓慢自转
+  groups.forEach((g, i) => {
+    const speed = (i + 1) * 0.003
+    g.points.rotation.y = t * speed * (i % 2 === 0 ? 1 : -1)
+    g.points.rotation.x = Math.sin(t * 0.01) * 0.05
+  })
+
+  renderer.render(scene, camera)
 }
 
 function onMouseMove(e) {
@@ -241,7 +225,7 @@ onUnmounted(() => {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse at 40% 30%, #1a1410 0%, #0a0806 60%, #050403 100%);
+  background: radial-gradient(ellipse at 35% 25%, #0e1525 0%, #080c16 40%, #040609 70%, #020304 100%);
 }
 .particle-bg canvas {
   display: block;
