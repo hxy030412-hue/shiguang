@@ -1,372 +1,196 @@
 <template>
-  <div class="interactive-particles" ref="container"></div>
+  <div class="memory-atmosphere">
+    <!-- 远层：模糊纹理 -->
+    <div class="layer-far"></div>
+    <!-- 中层：暖色光带 -->
+    <div class="layer-mid"></div>
+    <!-- 近层：漂浮尘埃 -->
+    <canvas class="layer-near" ref="dustCanvas"></canvas>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import * as THREE from 'three'
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
+import { ref, onMounted, onUnmounted } from 'vue'
 
-const props = defineProps({
-  scrollY: { type: Number, default: 0 },
-  clickPos: { type: Object, default: null },
-  hoverElement: { type: String, default: '' }
-})
+const dustCanvas = ref(null)
+let animId
+let particles = []
 
-const emit = defineEmits(['particle-click'])
+const DUST_COUNT = 18
 
-const container = ref(null)
-let renderer, scene, camera, composer, clock, animId
-let mouseX = 0, mouseY = 0
-let targetMX = 0, targetMY = 0
+function initDust() {
+  const canvas = dustCanvas.value
+  if (!canvas) return
+  canvas.width = window.innerWidth
+  canvas.height = window.innerHeight
 
-// 粒子系统
-const PARTICLE_COUNT = 2500
-let positions, velocities, colors, sizes, phases, lifetimes
-let bursts = [] // 点击爆发效果
-
-const PALETTE = [
-  0x4a6fa5, 0x5a8bc0, 0x3d5a80,
-  0x98c1d9, 0x7ab0d0,
-  0xd4a06a, 0xc9b8a0,
-  0xe8dcc8, 0xffffff,
-]
-
-function init() {
-  const w = window.innerWidth
-  const h = window.innerHeight
-  const dpr = Math.min(window.devicePixelRatio, 1.5)
-
-  scene = new THREE.Scene()
-  camera = new THREE.PerspectiveCamera(75, w / h, 1, 2000)
-  camera.position.z = 500
-
-  renderer = new THREE.WebGLRenderer({
-    alpha: true,
-    antialias: false,
-    powerPreference: 'high-performance'
-  })
-  renderer.setSize(w, h)
-  renderer.setPixelRatio(dpr)
-  renderer.setClearColor(0x000000, 0)
-  renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.2
-  container.value.appendChild(renderer.domElement)
-
-  composer = new EffectComposer(renderer)
-  composer.addPass(new RenderPass(scene, camera))
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(w, h), 0.6, 0.4, 0.25))
-
-  createBaseParticles()
-
-  clock = new THREE.Clock()
-  animate()
+  particles = []
+  for (let i = 0; i < DUST_COUNT; i++) {
+    particles.push(createDust(canvas))
+  }
 }
 
-function createBaseParticles() {
-  const geo = new THREE.BufferGeometry()
-  positions = new Float32Array(PARTICLE_COUNT * 3)
-  velocities = new Float32Array(PARTICLE_COUNT * 3)
-  colors = new Float32Array(PARTICLE_COUNT * 3)
-  sizes = new Float32Array(PARTICLE_COUNT)
-  phases = new Float32Array(PARTICLE_COUNT)
-  lifetimes = new Float32Array(PARTICLE_COUNT)
-
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    resetBaseParticle(i)
+function createDust(canvas) {
+  return {
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    size: 0.8 + Math.random() * 1.5,
+    speedX: (Math.random() - 0.5) * 0.15,
+    speedY: -0.05 - Math.random() * 0.1,
+    alpha: 0.08 + Math.random() * 0.12,
+    phase: Math.random() * Math.PI * 2,
+    drift: 0.3 + Math.random() * 0.5
   }
+}
 
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-  geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1))
-  geo.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1))
-  geo.setAttribute('aLife', new THREE.BufferAttribute(lifetimes, 1))
+function animateDust() {
+  animId = requestAnimationFrame(animateDust)
+  const canvas = dustCanvas.value
+  if (!canvas) return
+  const ctx = canvas.getContext('2d')
+  const w = canvas.width
+  const h = canvas.height
 
-  const vertexShader = `
-    attribute float size;
-    attribute float aPhase;
-    attribute float aLife;
-    varying vec3 vColor;
-    varying float vAlpha;
-    varying float vDist;
-    uniform float uTime;
-    uniform float uScroll;
-    uniform vec2 uMouse;
+  ctx.clearRect(0, 0, w, h)
 
-    void main() {
-      vColor = color;
-      vec3 pos = position;
+  for (const p of particles) {
+    p.phase += 0.008
+    p.x += p.speedX + Math.sin(p.phase) * p.drift * 0.3
+    p.y += p.speedY
 
-      // 滚动视差 — 不同层不同速度
-      float layerDepth = mod(aPhase * 5.0, 1.0);
-      pos.y += uScroll * layerDepth * 0.3;
-
-      // 鼠标吸引/排斥
-      vec2 mouseWorld = uMouse * 300.0;
-      float mouseDist = length(pos.xy - mouseWorld);
-      float mouseInfluence = smoothstep(200.0, 0.0, mouseDist) * 30.0;
-      vec2 dir = normalize(pos.xy - mouseWorld + 0.001);
-      pos.xy += dir * mouseInfluence;
-
-      // 轻微漂浮
-      pos.x += sin(uTime * 0.3 + aPhase * 6.28) * 2.0;
-      pos.y += cos(uTime * 0.25 + aPhase * 4.0) * 2.0;
-
-      vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
-      float dist = -mvPos.z;
-      vDist = dist;
-
-      // 生命周期衰减
-      float life = aLife;
-      vAlpha = life * (smoothstep(1500.0, 100.0, dist) * 0.7 + 0.3);
-
-      // 闪烁
-      float flicker = 0.8 + 0.2 * sin(uTime * 1.5 + aPhase * 6.28);
-      vAlpha *= flicker;
-
-      float sizeScale = smoothstep(1500.0, 50.0, dist) * 2.5 + 1.0;
-      gl_PointSize = size * sizeScale * (280.0 / dist) * flicker;
-      gl_PointSize = max(gl_PointSize, 0.5);
-      gl_PointSize = min(gl_PointSize, 25.0);
-      gl_Position = projectionMatrix * mvPos;
+    // 超出边界重置
+    if (p.y < -10) {
+      p.y = h + 10
+      p.x = Math.random() * w
     }
-  `
+    if (p.x < -10) p.x = w + 10
+    if (p.x > w + 10) p.x = -10
 
-  const fragmentShader = `
-    varying vec3 vColor;
-    varying float vAlpha;
-    varying float vDist;
+    // 呼吸感透明度
+    const breathAlpha = p.alpha * (0.7 + 0.3 * Math.sin(p.phase * 0.5))
 
-    void main() {
-      vec2 c = gl_PointCoord - 0.5;
-      float d = length(c);
-
-      float glowStrength = smoothstep(1500.0, 100.0, vDist) * 0.4 + 0.3;
-      float glow = exp(-d * d * 6.0) * glowStrength;
-      float core = exp(-d * d * 35.0);
-      float alpha = (glow + core) * vAlpha;
-
-      float coreBoost = smoothstep(1500.0, 100.0, vDist) * 1.2;
-      vec3 finalCol = vColor * (1.0 + core * coreBoost);
-
-      gl_FragColor = vec4(finalCol, alpha);
-    }
-  `
-
-  const mat = new THREE.ShaderMaterial({
-    uniforms: {
-      uTime: { value: 0 },
-      uScroll: { value: 0 },
-      uMouse: { value: new THREE.Vector2(0, 0) }
-    },
-    vertexShader,
-    fragmentShader,
-    vertexColors: true,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending
-  })
-
-  const points = new THREE.Points(geo, mat)
-  scene.add(points)
-}
-
-function resetBaseParticle(i) {
-  const i3 = i * 3
-  const spread = 900
-  positions[i3] = (Math.random() - 0.5) * spread
-  positions[i3 + 1] = (Math.random() - 0.5) * spread
-  positions[i3 + 2] = -100 - Math.random() * 1400
-
-  const speed = 0.3 + Math.random() * 1.5
-  velocities[i3] = (Math.random() - 0.5) * 0.2
-  velocities[i3 + 1] = (Math.random() - 0.5) * 0.2
-  velocities[i3 + 2] = speed
-
-  const c = new THREE.Color(PALETTE[Math.floor(Math.random() * PALETTE.length)])
-  colors[i3] = c.r
-  colors[i3 + 1] = c.g
-  colors[i3 + 2] = c.b
-
-  sizes[i] = 1.0 + Math.random() * 2.5
-  phases[i] = Math.random()
-  lifetimes[i] = 1.0
-}
-
-// 点击爆发效果
-function createBurst(x, y) {
-  const count = 40
-  const geo = new THREE.BufferGeometry()
-  const pos = new Float32Array(count * 3)
-  const col = new Float32Array(count * 3)
-  const vel = []
-  const life = new Float32Array(count)
-
-  // 屏幕坐标转世界坐标
-  const worldX = (x / window.innerWidth - 0.5) * 600
-  const worldY = -(y / window.innerHeight - 0.5) * 400
-
-  for (let i = 0; i < count; i++) {
-    const i3 = i * 3
-    pos[i3] = worldX
-    pos[i3 + 1] = worldY
-    pos[i3 + 2] = 0
-
-    // 各方向飞散
-    const angle = Math.random() * Math.PI * 2
-    const speed = 2 + Math.random() * 6
-    vel.push({
-      x: Math.cos(angle) * speed,
-      y: Math.sin(angle) * speed,
-      z: (Math.random() - 0.5) * 3
-    })
-
-    const c = new THREE.Color(PALETTE[Math.floor(Math.random() * PALETTE.length)])
-    col[i3] = c.r
-    col[i3 + 1] = c.g
-    col[i3 + 2] = c.b
-
-    life[i] = 1.0
+    ctx.beginPath()
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+    ctx.fillStyle = `rgba(212, 180, 140, ${breathAlpha})`
+    ctx.fill()
   }
-
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
-  geo.setAttribute('color', new THREE.BufferAttribute(col, 3))
-
-  const mat = new THREE.PointsMaterial({
-    size: 4,
-    vertexColors: true,
-    transparent: true,
-    opacity: 1,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    sizeAttenuation: true
-  })
-
-  const points = new THREE.Points(geo, mat)
-  scene.add(points)
-
-  bursts.push({ points, vel, life, mat, pos })
-}
-
-function animate() {
-  animId = requestAnimationFrame(animate)
-  const t = clock.getElapsedTime()
-
-  // 更新基础粒子
-  const basePoints = scene.children[0]
-  if (basePoints && basePoints.material.uniforms) {
-    basePoints.material.uniforms.uTime.value = t
-    basePoints.material.uniforms.uScroll.value = props.scrollY * 0.01
-    basePoints.material.uniforms.uMouse.value.set(targetMX, targetMY)
-  }
-
-  // 移动基础粒子
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    const i3 = i * 3
-    positions[i3] += velocities[i3]
-    positions[i3 + 1] += velocities[i3 + 1]
-    positions[i3 + 2] += velocities[i3 + 2]
-
-    if (positions[i3 + 2] > 600) {
-      resetBaseParticle(i)
-    }
-  }
-
-  if (basePoints && basePoints.geometry) {
-    basePoints.geometry.attributes.position.needsUpdate = true
-  }
-
-  // 更新爆发粒子
-  for (let b = bursts.length - 1; b >= 0; b--) {
-    const burst = bursts[b]
-    let allDead = true
-
-    for (let i = 0; i < burst.life.length; i++) {
-      burst.life[i] -= 0.015
-      if (burst.life[i] > 0) {
-        allDead = false
-        const i3 = i * 3
-        burst.pos[i3] += burst.vel[i].x
-        burst.pos[i3 + 1] += burst.vel[i].y
-        burst.pos[i3 + 2] += burst.vel[i].z
-
-        // 重力
-        burst.vel[i].y -= 0.05
-        // 减速
-        burst.vel[i].x *= 0.98
-        burst.vel[i].y *= 0.98
-      }
-    }
-
-    burst.mat.opacity = burst.life.reduce((a, b) => Math.max(a, b), 0)
-    burst.points.geometry.attributes.position.needsUpdate = true
-
-    if (allDead) {
-      scene.remove(burst.points)
-      burst.points.geometry.dispose()
-      burst.mat.dispose()
-      bursts.splice(b, 1)
-    }
-  }
-
-  // 鼠标平滑
-  targetMX += (mouseX - targetMX) * 0.015
-  targetMY += (mouseY - targetMY) * 0.015
-  camera.position.x = targetMX * 40
-  camera.position.y = -targetMY * 25
-  camera.lookAt(0, 0, -300)
-
-  composer.render()
-}
-
-function onMouseMove(e) {
-  mouseX = (e.clientX / window.innerWidth - 0.5) * 2
-  mouseY = (e.clientY / window.innerHeight - 0.5) * 2
-}
-
-function onClick(e) {
-  createBurst(e.clientX, e.clientY)
 }
 
 function onResize() {
-  if (!renderer || !camera || !composer) return
-  const w = window.innerWidth
-  const h = window.innerHeight
-  camera.aspect = w / h
-  camera.updateProjectionMatrix()
-  renderer.setSize(w, h)
-  composer.setSize(w, h)
+  const canvas = dustCanvas.value
+  if (!canvas) return
+  canvas.width = window.innerWidth
+  canvas.height = window.innerHeight
 }
 
 onMounted(() => {
-  init()
-  window.addEventListener('mousemove', onMouseMove)
-  window.addEventListener('click', onClick)
+  initDust()
+  animateDust()
   window.addEventListener('resize', onResize)
 })
 
 onUnmounted(() => {
   cancelAnimationFrame(animId)
-  window.removeEventListener('mousemove', onMouseMove)
-  window.removeEventListener('click', onClick)
   window.removeEventListener('resize', onResize)
-  composer?.dispose()
-  renderer?.dispose()
-  scene?.clear()
 })
 </script>
 
 <style scoped>
-.interactive-particles {
+.memory-atmosphere {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 50%, #0e1628 0%, #080c16 40%, #040609 70%, #020304 100%);
+  background: #0f0c0a;
 }
-.interactive-particles canvas {
-  display: block;
+
+/* 远层：模糊纹理 — 老纸张/地图质感 */
+.layer-far {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(45, 35, 25, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(40, 30, 20, 0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(30, 24, 18, 0.5) 0%, #0f0c0a 70%);
+  filter: blur(2px);
+  opacity: 0.8;
+}
+
+/* 远层：极淡手写纹理（伪元素） */
+.layer-far::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 40px,
+      rgba(80, 60, 40, 0.02) 40px,
+      rgba(80, 60, 40, 0.02) 41px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 60px,
+      rgba(80, 60, 40, 0.015) 60px,
+      rgba(80, 60, 40, 0.015) 61px
+    );
+  opacity: 0.5;
+}
+
+/* 远层：胶片齿孔纹理 */
+.layer-far::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background-image:
+    repeating-linear-gradient(
+      180deg,
+      transparent,
+      transparent 28px,
+      rgba(60, 45, 30, 0.03) 28px,
+      rgba(60, 45, 30, 0.03) 30px
+    );
+  opacity: 0.6;
+}
+
+/* 中层：暖色光带 — 阳光透过窗帘的感觉 */
+.layer-mid {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(180, 140, 80, 0.04) 0%, transparent 40%),
+    radial-gradient(ellipse at 70% 80%, rgba(160, 120, 60, 0.03) 0%, transparent 35%),
+    radial-gradient(ellipse at 50% 40%, rgba(200, 160, 100, 0.025) 0%, transparent 50%);
+  animation: lightDrift 30s ease-in-out infinite alternate;
+}
+
+@keyframes lightDrift {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+  50% { transform: translate(-15px, 10px) scale(1.02); opacity: 0.8; }
+  100% { transform: translate(10px, -5px) scale(0.98); opacity: 0.7; }
+}
+
+/* 近层：尘埃画布 */
+.layer-near {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 全局胶片噪点（复用 App.vue 的 SVG） */
+.memory-atmosphere::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch' seed='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  opacity: 0.5;
+  mix-blend-mode: soft-light;
 }
 </style>

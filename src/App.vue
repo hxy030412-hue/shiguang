@@ -24,6 +24,7 @@
       <NavBar
         :darkMode="darkMode"
         :user="user"
+        :class="{ 'nav-hidden': !navVisible }"
         @toggle-dark="toggleDark"
         @logout="logout"
         @add-photo="showAdd = true"
@@ -33,12 +34,23 @@
           <component
             :is="Component"
             :photos="photos"
+            :archivedPhotos="archivedPhotos"
             :darkMode="darkMode"
             :user="user"
             :hasMore="hasMore"
+            :hasMoreArchived="hasMoreArchived"
             :loadingPhotos="loadingPhotos"
+            :loadingArchived="loadingArchived"
+            :layoutMap="layoutMap"
             @refresh-photos="loadPhotos"
             @load-more="loadMore"
+            @load-archived="loadArchivedPhotos"
+            @scroll-update="onScrollUpdate"
+            @update-user="onUpdateUser"
+            @save-layout="onSaveLayout"
+            @reset-layout="onResetLayout"
+            @archive-photo="onArchivePhoto"
+            @restore-photo="onRestorePhoto"
           />
         </Transition>
       </router-view>
@@ -63,10 +75,15 @@ import { api } from './api'
 const darkMode = ref(localStorage.getItem('darkMode') === 'true')
 const user = ref(null)
 const photos = ref([])
+const archivedPhotos = ref([])
 const showAdd = ref(false)
 const hasMore = ref(true)
+const hasMoreArchived = ref(true)
 const loadingPhotos = ref(true)
+const loadingArchived = ref(false)
 const scrollY = ref(0)
+const navVisible = ref(false)
+const layoutMap = ref({})
 let loadingMore = false
 
 watch(darkMode, (val) => {
@@ -81,13 +98,45 @@ function toggleDark() {
 async function loadPhotos() {
   loadingPhotos.value = true
   try {
-    const data = await api.getPhotos(0, 20)
-    photos.value = data.photos
-    hasMore.value = data.hasMore
+    const [photoData, layoutData] = await Promise.all([
+      api.getPhotos(0, 20),
+      api.getLayouts()
+    ])
+    photos.value = photoData.photos
+    hasMore.value = photoData.hasMore
+    // 合并布局数据为 map
+    const map = {}
+    for (const l of layoutData.layouts) {
+      map[l.photo_id] = l
+    }
+    layoutMap.value = map
   } catch {
     photos.value = []
   } finally {
     loadingPhotos.value = false
+  }
+}
+
+async function onSaveLayout(layouts) {
+  try {
+    await api.saveLayouts(layouts)
+    // 更新本地 layoutMap
+    const map = { ...layoutMap.value }
+    for (const l of layouts) {
+      map[l.photo_id] = { ...map[l.photo_id], ...l }
+    }
+    layoutMap.value = map
+  } catch (e) {
+    console.error('保存布局失败:', e)
+  }
+}
+
+async function onResetLayout() {
+  try {
+    await api.resetLayouts()
+    layoutMap.value = {}
+  } catch (e) {
+    console.error('重置布局失败:', e)
   }
 }
 
@@ -103,6 +152,29 @@ async function loadMore() {
   }
 }
 
+async function loadArchivedPhotos() {
+  loadingArchived.value = true
+  try {
+    const data = await api.getPhotos(0, 50, true)
+    archivedPhotos.value = data.photos
+    hasMoreArchived.value = data.hasMore
+  } catch {
+    archivedPhotos.value = []
+  } finally {
+    loadingArchived.value = false
+  }
+}
+
+function onArchivePhoto(photoId) {
+  photos.value = photos.value.filter(p => p.id !== photoId)
+}
+
+function onRestorePhoto(photoId) {
+  archivedPhotos.value = archivedPhotos.value.filter(p => p.id !== photoId)
+  // 重新加载活跃照片（恢复的照片会出现在回忆馆）
+  loadPhotos()
+}
+
 async function onLogin(u) {
   user.value = u
   await loadPhotos()
@@ -116,6 +188,15 @@ function logout() {
 
 function onScroll() {
   scrollY.value = window.scrollY
+}
+
+function onScrollUpdate(y) {
+  scrollY.value = y
+  navVisible.value = y > 100
+}
+
+function onUpdateUser(updated) {
+  user.value = updated
 }
 
 onMounted(async () => {
@@ -229,10 +310,6 @@ body {
 }
 body.dark-mode {
   background: transparent;
-  cursor: none;
-}
-body.dark-mode * {
-  cursor: none;
 }
 
 /* Typography hierarchy */
@@ -271,7 +348,7 @@ small, .text-sm {
   width: 100%; height: 100%;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.5;
+  opacity: 0.35;
   mix-blend-mode: soft-light;
 }
 
@@ -304,6 +381,16 @@ a {
 }
 a:hover {
   color: var(--accent-hover);
+}
+
+/* NavBar hide/show */
+.navbar {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+.nav-hidden {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Page transitions */

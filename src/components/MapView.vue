@@ -8,7 +8,7 @@
 
     <!-- 顶部标题 -->
     <div class="map-header">
-      <h1>足迹</h1>
+      <h1>人生地图</h1>
       <span class="photo-count">{{ photos.length }} 个记忆</span>
     </div>
 

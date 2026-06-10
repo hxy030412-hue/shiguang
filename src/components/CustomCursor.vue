@@ -1,116 +1,64 @@
 <template>
-  <div class="cursor-fx" ref="container">
-    <div class="cursor-dot" ref="dot"></div>
-    <div class="cursor-ring" ref="ring"></div>
-    <div class="cursor-glow" ref="glow"></div>
-    <canvas class="cursor-trail" ref="trailCanvas"></canvas>
+  <div class="cursor-fx">
+    <div
+      class="cursor-ring"
+      ref="ring"
+      :class="{ 'ring-near': nearPhoto, 'ring-click': clicking }"
+    ></div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
-const container = ref(null)
-const dot = ref(null)
 const ring = ref(null)
-const glow = ref(null)
-const trailCanvas = ref(null)
+const nearPhoto = ref(false)
+const clicking = ref(false)
 
-let mouseX = 0, mouseY = 0
-let ringX = 0, ringY = 0
-let glowX = 0, glowY = 0
-let trail = []
+let mouseX = -100, mouseY = -100
+let ringX = -100, ringY = -100
 let animId
-let ctx
+let clickTimer = null
 
-const TRAIL_LENGTH = 20
-const TRAIL_DECAY = 0.92
-
-function init() {
-  if (!trailCanvas.value) return
-  ctx = trailCanvas.value.getContext('2d')
-  resizeCanvas()
-  window.addEventListener('resize', resizeCanvas)
-}
-
-function resizeCanvas() {
-  if (!trailCanvas.value) return
-  trailCanvas.value.width = window.innerWidth
-  trailCanvas.value.height = window.innerHeight
-}
+const LERP = 0.14
 
 function onMouseMove(e) {
   mouseX = e.clientX
   mouseY = e.clientY
 
-  // 添加到轨迹
-  trail.push({ x: mouseX, y: mouseY, alpha: 1 })
-  if (trail.length > TRAIL_LENGTH) trail.shift()
+  // 检测靠近照片
+  const el = document.elementFromPoint(mouseX, mouseY)
+  nearPhoto.value = !!el?.closest('.scatter-item, .grid-item, .strip-item, .memory-card')
+}
+
+function onMouseDown() {
+  clicking.value = true
+  if (clickTimer) clearTimeout(clickTimer)
+  clickTimer = setTimeout(() => { clicking.value = false }, 250)
 }
 
 function animate() {
   animId = requestAnimationFrame(animate)
 
-  // 平滑跟随
-  ringX += (mouseX - ringX) * 0.15
-  ringY += (mouseY - ringY) * 0.15
-  glowX += (mouseX - glowX) * 0.08
-  glowY += (mouseY - glowY) * 0.08
+  ringX += (mouseX - ringX) * LERP
+  ringY += (mouseY - ringY) * LERP
 
-  // 更新位置
-  if (dot.value) {
-    dot.value.style.transform = `translate(${mouseX}px, ${mouseY}px)`
-  }
   if (ring.value) {
     ring.value.style.transform = `translate(${ringX}px, ${ringY}px)`
-  }
-  if (glow.value) {
-    glow.value.style.transform = `translate(${glowX}px, ${glowY}px)`
-  }
-
-  // 绘制轨迹
-  if (ctx) {
-    ctx.clearRect(0, 0, trailCanvas.value.width, trailCanvas.value.height)
-
-    if (trail.length > 1) {
-      ctx.beginPath()
-      ctx.moveTo(trail[0].x, trail[0].y)
-
-      for (let i = 1; i < trail.length; i++) {
-        const p = trail[i]
-        ctx.lineTo(p.x, p.y)
-      }
-
-      ctx.strokeStyle = 'rgba(212, 160, 106, 0.3)'
-      ctx.lineWidth = 2
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
-      ctx.stroke()
-
-      // 轨迹光点
-      for (let i = 0; i < trail.length; i++) {
-        const p = trail[i]
-        p.alpha *= TRAIL_DECAY
-
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(212, 160, 106, ${p.alpha * 0.5})`
-        ctx.fill()
-      }
-    }
   }
 }
 
 onMounted(() => {
-  init()
-  window.addEventListener('mousemove', onMouseMove)
+  window.addEventListener('mousemove', onMouseMove, { passive: true })
+  window.addEventListener('mousedown', onMouseDown)
   animate()
 })
 
 onUnmounted(() => {
   cancelAnimationFrame(animId)
+  if (clickTimer) clearTimeout(clickTimer)
   window.removeEventListener('mousemove', onMouseMove)
-  window.removeEventListener('resize', resizeCanvas)
+  window.removeEventListener('mousedown', onMouseDown)
 })
 </script>
 
@@ -120,59 +68,82 @@ onUnmounted(() => {
   inset: 0;
   pointer-events: none;
   z-index: 10000;
-  mix-blend-mode: screen;
 }
 
-/* 中心点 */
-.cursor-dot {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  background: #d4a06a;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 0 8px rgba(212, 160, 106, 0.8);
-}
-
-/* 跟随光环 */
+/* 对焦环 */
 .cursor-ring {
   position: absolute;
-  width: 28px;
-  height: 28px;
-  border: 1.5px solid rgba(212, 160, 106, 0.4);
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid rgba(212, 160, 106, 0.25);
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  transition: width 0.2s, height 0.2s, border-color 0.2s;
+  transition:
+    width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.3s ease,
+    border-width 0.15s ease,
+    opacity 0.3s ease;
+  /* 对焦环的四个缺口 */
+  background:
+    radial-gradient(circle, transparent 60%, rgba(212, 160, 106, 0.03) 100%);
 }
 
-/* 大光晕 */
-.cursor-glow {
+/* 对焦环缺口线 — 模拟相机对焦指示 */
+.cursor-ring::before,
+.cursor-ring::after {
+  content: '';
   position: absolute;
-  width: 120px;
-  height: 120px;
-  background: radial-gradient(circle, rgba(212, 160, 106, 0.15) 0%, transparent 70%);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  filter: blur(10px);
+  background: rgba(212, 160, 106, 0.3);
+  border-radius: 1px;
 }
 
-/* 轨迹画布 */
-.cursor-trail {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+/* 上下短线 */
+.cursor-ring::before {
+  width: 1.5px;
+  height: 5px;
+  top: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 36px 0 rgba(212, 160, 106, 0.3);
 }
 
-/* 悬停交互态 */
-.cursor-fx.hover .cursor-ring {
+/* 左右短线 */
+.cursor-ring::after {
+  width: 5px;
+  height: 1.5px;
+  left: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  box-shadow: 36px 0 0 rgba(212, 160, 106, 0.3);
+}
+
+/* 靠近照片 — 放大 + 亮度提升 */
+.cursor-ring.ring-near {
   width: 40px;
   height: 40px;
-  border-color: rgba(212, 160, 106, 0.6);
+  border-color: rgba(212, 160, 106, 0.35);
 }
 
-.cursor-fx.hover .cursor-dot {
-  transform: translate(-50%, -50%) scale(1.5);
+.cursor-ring.ring-near::before {
+  background: rgba(212, 160, 106, 0.4);
+  box-shadow: 0 44px 0 rgba(212, 160, 106, 0.4);
+}
+.cursor-ring.ring-near::after {
+  background: rgba(212, 160, 106, 0.4);
+  box-shadow: 44px 0 0 rgba(212, 160, 106, 0.4);
+}
+
+/* 点击 — 快门收缩 */
+.cursor-ring.ring-click {
+  width: 24px;
+  height: 24px;
+  border-width: 2px;
+  border-color: rgba(212, 160, 106, 0.5);
+  transition:
+    width 0.08s ease-out,
+    height 0.08s ease-out,
+    border-width 0.08s ease-out,
+    border-color 0.08s ease-out;
 }
 </style>

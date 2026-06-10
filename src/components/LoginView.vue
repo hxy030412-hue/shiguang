@@ -8,7 +8,7 @@
     <div class="login-content">
       <div class="brand">
         <h1>拾光</h1>
-        <p class="tagline">收集生活中的每一束光</p>
+        <p class="tagline">记录值得被记住的瞬间</p>
       </div>
 
       <div class="login-card">
@@ -125,18 +125,19 @@ async function submit() {
   text-align: center;
 }
 .brand h1 {
-  font-size: var(--text-4xl);
-  font-weight: 300;
+  font-size: clamp(40px, 7vw, 56px);
+  font-weight: 200;
   font-family: var(--font-serif);
   color: var(--text);
-  letter-spacing: var(--tracking-wider);
-  margin: 0 0 12px;
+  letter-spacing: 0.15em;
+  margin: 0 0 16px;
 }
 .tagline {
   color: var(--text-muted);
   font-size: var(--text-base);
-  letter-spacing: var(--tracking-wide);
+  letter-spacing: 0.1em;
   font-weight: 300;
+  font-family: var(--font-serif);
 }
 
 .login-card {

@@ -1,9 +1,10 @@
 <template>
   <nav class="navbar">
-    <router-link to="/" class="logo">📷 拾光</router-link>
+    <router-link to="/" class="logo">拾光</router-link>
     <div class="nav-links">
-      <router-link to="/" class="nav-link" active-class="active" exact>首页</router-link>
-      <router-link to="/map" class="nav-link" active-class="active">足迹</router-link>
+      <router-link to="/" class="nav-link" active-class="active" exact>回忆馆</router-link>
+      <router-link to="/map" class="nav-link" active-class="active">人生地图</router-link>
+      <router-link to="/timebox" class="nav-link" active-class="active">时光盒</router-link>
       <router-link to="/settings" class="nav-link" active-class="active">设置</router-link>
     </div>
     <button class="add-btn" @click="$emit('add-photo')">+</button>
@@ -11,7 +12,13 @@
       <button class="theme-btn" @click="$emit('toggle-dark')">
         {{ darkMode ? '☀' : '☾' }}
       </button>
-      <span class="username">{{ user?.nickname || user?.username }}</span>
+      <div class="user-info">
+        <div class="nav-avatar">
+          <img v-if="user?.avatar" :src="user.avatar" alt="头像" />
+          <div v-else class="nav-avatar-placeholder">{{ (user?.nickname || user?.username || '?').charAt(0) }}</div>
+        </div>
+        <span class="username">{{ user?.nickname || user?.username }}</span>
+      </div>
       <button class="logout-btn" @click="$emit('logout')">退出</button>
     </div>
   </nav>
@@ -100,6 +107,36 @@ defineEmits(['toggle-dark', 'logout', 'add-photo'])
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.nav-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--input-bg);
+  border: 1.5px solid var(--border);
+  flex-shrink: 0;
+  transition: border-color 0.3s;
+}
+.nav-avatar:hover {
+  border-color: var(--accent);
+}
+.nav-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.nav-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-family: var(--font-serif);
 }
 .username {
   font-size: 14px;

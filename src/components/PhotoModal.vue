@@ -46,12 +46,31 @@
             </div>
 
             <button class="export-btn" @click="exportCard">
-              <span>导出明信片</span>
+              <span>导出回忆卡</span>
+            </button>
+
+            <button class="archive-btn" @click="showArchiveConfirm = true">
+              <span>📦 收进时光盒</span>
             </button>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- 归档确认弹窗 -->
+    <Transition name="confirm-fade">
+      <div v-if="showArchiveConfirm" class="confirm-mask" @click.self="showArchiveConfirm = false">
+        <div class="confirm-dialog">
+          <h3>收进时光盒</h3>
+          <p>这段回忆将从回忆馆暂时隐藏。</p>
+          <p>你随时都可以在「时光盒」中重新找回它。</p>
+          <div class="confirm-actions">
+            <button class="confirm-cancel" @click="showArchiveConfirm = false">取消</button>
+            <button class="confirm-archive" @click="doArchive">收进时光盒</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <!-- 明信片模板 -->
     <div class="postcard-template" ref="postcardEl">
@@ -65,7 +84,7 @@
           <span>{{ photo.location }}</span>
         </div>
         <p class="postcard-story">{{ photo.story }}</p>
-        <div class="postcard-footer">📷 拾光</div>
+        <div class="postcard-footer">✨ 拾光 · 记录值得被记住的瞬间</div>
       </div>
     </div>
   </Teleport>
@@ -74,12 +93,13 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import html2canvas from 'html2canvas'
+import { api } from '../api'
 
 const props = defineProps({
   photo: Object,
   originRect: Object
 })
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'archive-photo'])
 
 const shellEl = ref(null)
 const photoEl = ref(null)
@@ -87,10 +107,11 @@ const postcardEl = ref(null)
 const phase = ref(0)
 const closing = ref(false)
 const imgRevealed = ref(false)
+const showArchiveConfirm = ref(false)
+const archiving = ref(false)
 
 const EASE_EXPAND = 'cubic-bezier(0.16, 1, 0.3, 1)'
 const EASE_CLOSE = 'cubic-bezier(0.4, 0, 0.2, 1)'
-const EASE_SPRING = 'cubic-bezier(0.34, 1.56, 0.64, 1)'
 
 const shellStyle = computed(() => {
   if (!props.originRect) return {}
@@ -133,17 +154,25 @@ const shellStyle = computed(() => {
 })
 
 const imgStyle = computed(() => {
+  if (archiving.value) {
+    return {
+      opacity: '0',
+      transform: 'scale(0.92)',
+      filter: 'blur(4px)',
+      transition: 'opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease'
+    }
+  }
   if (phase.value < 2) {
     return {
-      transform: 'scale(1.08)',
-      filter: 'brightness(0.9)',
-      transition: 'transform 0.8s cubic-bezier(0.16,1,0.3,1), filter 0.6s ease'
+      opacity: '0',
+      transform: 'translateY(12px)',
+      transition: 'opacity 0.5s ease, transform 0.5s cubic-bezier(0.16,1,0.3,1)'
     }
   }
   return {
-    transform: 'scale(1)',
-    filter: 'brightness(1)',
-    transition: 'transform 1.2s cubic-bezier(0.16,1,0.3,1), filter 0.8s ease'
+    opacity: '1',
+    transform: 'translateY(0)',
+    transition: 'opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1)'
   }
 })
 
@@ -189,6 +218,23 @@ function close() {
     }, 150)
   } else {
     emit('close')
+  }
+}
+
+async function doArchive() {
+  showArchiveConfirm.value = false
+  archiving.value = true
+
+  try {
+    await api.archivePhoto(props.photo.id, true)
+    // 播放淡出动画后关闭
+    setTimeout(() => {
+      emit('archive-photo', props.photo.id)
+      emit('close')
+    }, 350)
+  } catch (e) {
+    console.error('归档失败:', e)
+    archiving.value = false
   }
 }
 
@@ -252,14 +298,19 @@ onUnmounted(() => {
   min-width: 0;
   position: relative;
   overflow: hidden;
-  background: #111;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .photo-stage img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   display: block;
-  will-change: transform, filter;
+  will-change: opacity, transform, filter;
 }
 
 /* 标题浮层 */
@@ -428,6 +479,116 @@ onUnmounted(() => {
   background: var(--accent-hover);
   box-shadow: 0 4px 24px var(--accent-glow);
   transform: translateY(-1px) !important;
+}
+
+/* 归档按钮 */
+.archive-btn {
+  margin-top: 12px;
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.3s;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  transform: translateY(12px);
+}
+.info-visible .archive-btn {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.5s ease 0.55s, transform 0.5s cubic-bezier(0.16,1,0.3,1) 0.55s, border-color 0.3s, color 0.3s;
+}
+.archive-btn:hover {
+  border-color: var(--text-muted);
+  color: var(--text-secondary);
+}
+
+/* 确认弹窗 */
+.confirm-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(10, 8, 6, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.confirm-dialog {
+  background: var(--surface-solid);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  width: 380px;
+  max-width: 90%;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+.confirm-dialog h3 {
+  margin: 0 0 16px;
+  font-size: var(--text-xl);
+  font-weight: 500;
+  font-family: var(--font-serif);
+  color: var(--text);
+}
+.confirm-dialog p {
+  margin: 0 0 8px;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+}
+.confirm-cancel {
+  flex: 1;
+  padding: 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.confirm-cancel:hover {
+  border-color: var(--text-muted);
+  color: var(--text-secondary);
+}
+.confirm-archive {
+  flex: 1;
+  padding: 12px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 12px var(--accent-glow);
+}
+.confirm-archive:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+/* 确认弹窗动画 */
+.confirm-fade-enter-active {
+  transition: opacity 0.25s ease;
+}
+.confirm-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.confirm-fade-enter-from,
+.confirm-fade-leave-to {
+  opacity: 0;
 }
 
 /* 明信片导出模板 */

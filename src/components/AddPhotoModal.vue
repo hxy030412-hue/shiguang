@@ -3,13 +3,13 @@
     <div class="modal-mask" @click.self="close">
       <div class="modal-content">
         <button class="close-btn" @click="close">&times;</button>
-        <h2>添加新日记</h2>
+        <h2>捕捉一段回忆</h2>
 
         <form @submit.prevent="submit">
           <div class="form-row">
             <div class="form-group">
               <label>标题</label>
-              <input v-model="form.title" placeholder="给这段旅程起个名字" required />
+              <input v-model="form.title" placeholder="给这段回忆起个名字" required />
             </div>
             <div class="form-group">
               <label>日期</label>
@@ -20,7 +20,7 @@
           <div class="form-row">
             <div class="form-group">
               <label>地点</label>
-              <input v-model="form.location" placeholder="例：日本·京都" />
+              <input v-model="form.location" placeholder="例：京都·清水寺" />
             </div>
             <div class="form-group">
               <label>同行人</label>
@@ -41,7 +41,7 @@
 
           <div class="form-group">
             <label>故事</label>
-            <textarea v-model="form.story" placeholder="记录这段旅程中的故事..." rows="4"></textarea>
+            <textarea v-model="form.story" placeholder="记录这段回忆中的故事..." rows="4"></textarea>
           </div>
 
           <div class="form-group">
@@ -50,7 +50,7 @@
               <img v-if="preview" :src="preview" class="preview" />
               <div v-else class="upload-placeholder">
                 <span class="upload-icon">+</span>
-                <span>点击或拖拽上传图片</span>
+                <span>选择一张照片</span>
               </div>
               <input ref="fileInput" type="file" accept="image/*" @change="onFileChange" hidden />
             </div>
@@ -59,7 +59,7 @@
           <p v-if="error" class="error">{{ error }}</p>
 
           <button type="submit" class="submit-btn" :disabled="submitting">
-            {{ submitting ? '上传中...' : '保存日记' }}
+            {{ submitting ? '保存中...' : '保存回忆' }}
           </button>
         </form>
       </div>
@@ -175,10 +175,12 @@ function close() {
   transition: background 0.5s;
 }
 h2 {
-  margin: 0 0 28px;
-  font-size: 22px;
+  margin: 0 0 32px;
+  font-size: 24px;
   color: var(--text);
-  font-weight: 600;
+  font-weight: 400;
+  font-family: var(--font-serif);
+  letter-spacing: var(--tracking-wide);
 }
 .close-btn {
   position: absolute;
@@ -200,25 +202,28 @@ h2 {
 .form-row .form-group { flex: 1; }
 
 .form-group {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 label {
   display: block;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-muted);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
 }
 input, textarea {
   width: 100%;
-  padding: 10px 14px;
+  padding: 12px 16px;
   border: 1px solid var(--input-border);
-  border-radius: var(--radius-sm);
-  font-size: 14px;
+  border-radius: var(--radius-md);
+  font-size: 15px;
   background: var(--input-bg);
   color: var(--text);
   transition: border-color 0.3s, box-shadow 0.3s;
   box-sizing: border-box;
   font-family: inherit;
+  line-height: var(--leading-normal);
 }
 input:focus, textarea:focus {
   outline: none;
@@ -232,11 +237,11 @@ textarea { resize: vertical; }
 
 .upload-area {
   border: 2px dashed var(--border-strong);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
-  transition: border-color 0.3s, background 0.3s;
-  min-height: 160px;
+  transition: border-color 0.4s, background 0.4s, transform 0.3s;
+  min-height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -245,6 +250,7 @@ textarea { resize: vertical; }
 .upload-area:hover {
   border-color: var(--accent);
   background: var(--accent-glow);
+  transform: scale(1.01);
 }
 .upload-placeholder {
   display: flex;
@@ -273,15 +279,17 @@ textarea { resize: vertical; }
 }
 .submit-btn {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   font-size: 16px;
   cursor: pointer;
-  transition: background 0.3s, box-shadow 0.3s;
-  box-shadow: 0 2px 12px var(--accent-glow);
+  transition: all 0.3s;
+  box-shadow: 0 2px 16px var(--accent-glow);
+  letter-spacing: 0.04em;
+  margin-top: 8px;
 }
 .submit-btn:hover {
   background: var(--accent-hover);

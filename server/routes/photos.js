@@ -7,8 +7,10 @@ const router = express.Router()
 router.get('/', authMiddleware, (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 20, 100)
   const offset = parseInt(req.query.offset) || 0
-  const total = db.prepare('SELECT COUNT(*) as count FROM photos WHERE user_id = ?').get(req.userId).count
-  const photos = db.prepare('SELECT * FROM photos WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?').all(req.userId, limit, offset)
+  const archived = req.query.archived === '1' ? 1 : 0
+
+  const total = db.prepare('SELECT COUNT(*) as count FROM photos WHERE user_id = ? AND archived = ?').get(req.userId, archived).count
+  const photos = db.prepare('SELECT * FROM photos WHERE user_id = ? AND archived = ? ORDER BY id DESC LIMIT ? OFFSET ?').all(req.userId, archived, limit, offset)
   res.json({ photos, total, hasMore: offset + limit < total })
 })
 
@@ -47,6 +49,16 @@ router.put('/:id', authMiddleware, (req, res) => {
 
   const updated = db.prepare('SELECT * FROM photos WHERE id = ?').get(req.params.id)
   res.json(updated)
+})
+
+// 归档/恢复
+router.put('/:id/archive', authMiddleware, (req, res) => {
+  const photo = db.prepare('SELECT * FROM photos WHERE id = ? AND user_id = ?').get(req.params.id, req.userId)
+  if (!photo) return res.status(404).json({ error: '照片不存在' })
+
+  const archived = req.body.archived ? 1 : 0
+  db.prepare('UPDATE photos SET archived = ? WHERE id = ? AND user_id = ?').run(archived, req.params.id, req.userId)
+  res.json({ success: true, archived })
 })
 
 router.delete('/:id', authMiddleware, (req, res) => {

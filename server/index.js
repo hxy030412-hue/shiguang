@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.js'
 import userRoutes from './routes/user.js'
 import photosRoutes from './routes/photos.js'
 import uploadRoutes from './routes/upload.js'
+import layoutsRoutes from './routes/layouts.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -21,6 +22,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/user', userRoutes)
 app.use('/api/photos', photosRoutes)
 app.use('/api/upload', uploadRoutes)
+app.use('/api/layouts', layoutsRoutes)
 
 // 托管前端打包文件
 const distPath = path.join(__dirname, '../dist')

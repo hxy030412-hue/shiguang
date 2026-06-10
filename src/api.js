@@ -29,13 +29,23 @@ export const api = {
     request('/user/profile', { method: 'PUT', body: JSON.stringify(data) }),
 
   // 照片
-  getPhotos: (offset = 0, limit = 20) => request(`/photos?offset=${offset}&limit=${limit}`),
+  getPhotos: (offset = 0, limit = 20, archived = false) =>
+    request(`/photos?offset=${offset}&limit=${limit}&archived=${archived ? 1 : 0}`),
   createPhoto: (data) =>
     request('/photos', { method: 'POST', body: JSON.stringify(data) }),
   updatePhoto: (id, data) =>
     request('/photos/' + id, { method: 'PUT', body: JSON.stringify(data) }),
+  archivePhoto: (id, archived) =>
+    request('/photos/' + id + '/archive', { method: 'PUT', body: JSON.stringify({ archived }) }),
   deletePhoto: (id) =>
     request('/photos/' + id, { method: 'DELETE' }),
+
+  // 布局
+  getLayouts: () => request('/layouts'),
+  saveLayouts: (layouts) =>
+    request('/layouts', { method: 'PUT', body: JSON.stringify({ layouts }) }),
+  resetLayouts: () =>
+    request('/layouts', { method: 'DELETE' }),
 
   // 上传
   upload: async (file) => {
