@@ -4,27 +4,24 @@
     {
       "src": "api/index.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "dist/**",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "api/index.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/uploads/(.*)",
-      "dest": "api/index.js"
+      "dest": "/api/index.js"
     },
     {
-      "handle": "filesystem"
+      "src": "/(.+\\.(png|ico|svg|jpg|jpeg|gif|webp|css|js|woff|woff2|ttf|eot))",
+      "dest": "/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "api/index.js"
+      "dest": "/index.html"
     }
   ]
 }
