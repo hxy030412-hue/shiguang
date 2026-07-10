@@ -1,4 +1,4 @@
-FROM node:20-slim AS frontend
+FROM node:18-slim AS frontend
 RUN apt-get update && apt-get install -y python3 make g++ libatomic1 && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY package*.json ./
@@ -6,7 +6,7 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-FROM node:20-slim AS backend
+FROM node:18-slim AS backend
 RUN apt-get update && apt-get install -y python3 make g++ libatomic1 && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY package*.json ./
