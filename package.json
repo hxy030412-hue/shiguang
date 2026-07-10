@@ -10,15 +10,14 @@
     "server": "node server/index.js"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.4",
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^11.6.0",
     "cors": "^2.8.5",
     "express": "^4.21.0",
     "html2canvas": "^1.4.1",
     "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
     "multer": "^1.4.5-lts.1",
-    "three": "^0.169.0",
     "vue": "^3.5.13",
     "vue-router": "^4.4.5"
   },

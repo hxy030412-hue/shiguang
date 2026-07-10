@@ -7,9 +7,12 @@ import { authMiddleware } from '../middleware/auth.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const uploadsDir = process.env.DATA_DIR
-  ? path.join(process.env.DATA_DIR, 'uploads')
-  : path.join(__dirname, '../../uploads')
+// Vercel 环境用 /tmp，本地环境用项目目录
+const uploadsDir = process.env.VERCEL
+  ? '/tmp/uploads'
+  : process.env.DATA_DIR
+    ? path.join(process.env.DATA_DIR, 'uploads')
+    : path.join(__dirname, '../../uploads')
 fs.mkdirSync(uploadsDir, { recursive: true })
 
 const router = express.Router()

@@ -1,12 +1,12 @@
 import express from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import db from '../db.js'
+import { db } from '../db.js'
 import { SECRET } from '../middleware/auth.js'
 
 const router = express.Router()
 
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
   const { username, password } = req.body
   if (!username || !password) {
     return res.status(400).json({ error: '用户名和密码不能为空' })
@@ -15,14 +15,17 @@ router.post('/register', (req, res) => {
     return res.status(400).json({ error: '密码至少6位' })
   }
 
-  const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username)
-  if (existing) {
+  const existing = await db.execute({ sql: 'SELECT id FROM users WHERE username = ?', args: [username] })
+  if (existing.rows.length > 0) {
     return res.status(400).json({ error: '用户名已存在' })
   }
 
   const hash = bcrypt.hashSync(password, 10)
-  const result = db.prepare('INSERT INTO users (username, password_hash, nickname) VALUES (?, ?, ?)').run(username, hash, username)
-  const userId = result.lastInsertRowid
+  const result = await db.execute({
+    sql: 'INSERT INTO users (username, password_hash, nickname) VALUES (?, ?, ?)',
+    args: [username, hash, username]
+  })
+  const userId = Number(result.lastInsertRowid)
 
   // 为新用户填充示例照片
   const demoPhotos = [
@@ -39,23 +42,25 @@ router.post('/register', (req, res) => {
     ['https://images.unsplash.com/photo-1502301103665-0b95cc738daf?w=600', '土耳其的热气球', '2024年6月1日', '土耳其·卡帕多奇亚', 38.6431, 34.8293, '女朋友', '清晨五点坐上热气球，看着上百个热气球同时升空。'],
     ['https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=600', '云南的梯田日落', '2024年10月15日', '中国·云南·元阳', 23.0843, 102.8440, '摄影俱乐部', '为了拍到最好的光线，在田埂上蹲了两个小时。梯田在夕阳下像一面面镜子。']
   ]
-  const insert = db.prepare('INSERT INTO photos (user_id, url, title, date, location, lat, lng, people, story) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-  const insertMany = db.transaction((photos) => {
-    for (const p of photos) insert.run(userId, ...p)
-  })
-  insertMany(demoPhotos)
+  for (const p of demoPhotos) {
+    await db.execute({
+      sql: 'INSERT INTO photos (user_id, url, title, date, location, lat, lng, people, story) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      args: [userId, ...p]
+    })
+  }
 
   const token = jwt.sign({ id: userId }, SECRET, { expiresIn: '7d' })
   res.json({ token, user: { id: userId, username, nickname: username } })
 })
 
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { username, password } = req.body
   if (!username || !password) {
     return res.status(400).json({ error: '用户名和密码不能为空' })
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username)
+  const result = await db.execute({ sql: 'SELECT * FROM users WHERE username = ?', args: [username] })
+  const user = result.rows[0]
   if (!user) {
     return res.status(400).json({ error: '用户名或密码错误' })
   }
