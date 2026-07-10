@@ -7,6 +7,3 @@ cmds = ["npm run build"]
 
 [start]
 cmd = "node server/index.js"
-
-[phases.setup]
-nixPkgs = ["nodejs-20_x"]
