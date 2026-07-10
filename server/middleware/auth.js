@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken'
 
-export const SECRET = 'travel-diary-secret-key'
+export const SECRET = process.env.JWT_SECRET || 'travel-diary-secret-key'
 
 export function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '')

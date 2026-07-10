@@ -1,10 +1,14 @@
 import Database from 'better-sqlite3'
 import { fileURLToPath } from 'url'
 import path from 'path'
+import fs from 'fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const db = new Database(path.join(__dirname, 'travel-diary.db'))
+const dataDir = process.env.DATA_DIR || __dirname
+fs.mkdirSync(dataDir, { recursive: true })
+
+const db = new Database(path.join(dataDir, 'travel-diary.db'))
 
 db.pragma('journal_mode = WAL')
 db.pragma('foreign_keys = ON')

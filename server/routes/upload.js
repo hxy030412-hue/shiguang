@@ -1,15 +1,21 @@
 import express from 'express'
 import multer from 'multer'
 import path from 'path'
+import fs from 'fs'
 import { fileURLToPath } from 'url'
 import { authMiddleware } from '../middleware/auth.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+const uploadsDir = process.env.DATA_DIR
+  ? path.join(process.env.DATA_DIR, 'uploads')
+  : path.join(__dirname, '../../uploads')
+fs.mkdirSync(uploadsDir, { recursive: true })
+
 const router = express.Router()
 
 const storage = multer.diskStorage({
-  destination: path.join(__dirname, '../../uploads'),
+  destination: uploadsDir,
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname)
     cb(null, Date.now() + '-' + Math.round(Math.random() * 1e6) + ext)
