@@ -11,3 +11,6 @@ cmds = ["npm run build"]
 
 [start]
 cmd = "node server/index.js"
+
+[phases.run]
+cmds = ["node server/index.js"]
