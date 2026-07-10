@@ -9,7 +9,6 @@ import photosRoutes from './routes/photos.js'
 import uploadRoutes from './routes/upload.js'
 import layoutsRoutes from './routes/layouts.js'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 
 app.use(cors())
@@ -22,8 +21,10 @@ app.use('/api/photos', photosRoutes)
 app.use('/api/upload', uploadRoutes)
 app.use('/api/layouts', layoutsRoutes)
 
-// 静态文件
-const distPath = path.join(__dirname, '../dist')
+// 静态文件 — 兼容本地和 Vercel
+const distPath = process.env.VERCEL
+  ? path.join(process.cwd(), 'dist')
+  : path.join(path.dirname(fileURLToPath(import.meta.url)), '../dist')
 app.use(express.static(distPath))
 
 // SPA 回退
