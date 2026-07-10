@@ -1,7 +1,5 @@
 import express from 'express'
 import cors from 'cors'
-import path from 'path'
-import { fileURLToPath } from 'url'
 
 import authRoutes from './routes/auth.js'
 import userRoutes from './routes/user.js'
@@ -20,17 +18,6 @@ app.use('/api/user', userRoutes)
 app.use('/api/photos', photosRoutes)
 app.use('/api/upload', uploadRoutes)
 app.use('/api/layouts', layoutsRoutes)
-
-// 静态文件 — 兼容本地和 Vercel
-const distPath = process.env.VERCEL
-  ? path.join(process.cwd(), 'dist')
-  : path.join(path.dirname(fileURLToPath(import.meta.url)), '../dist')
-app.use(express.static(distPath))
-
-// SPA 回退
-app.get('*', (req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'))
-})
 
 // 全局错误处理
 app.use((err, req, res, next) => {
