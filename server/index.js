@@ -31,8 +31,16 @@ app.use('/api/layouts', layoutsRoutes)
 // 托管前端打包文件
 const distPath = path.join(__dirname, '../dist')
 app.use(express.static(distPath))
-app.get('/{*path}', (req, res) => {
+
+// SPA 回退 — Express 4 兼容写法
+app.get('*', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'))
+})
+
+// 全局错误处理 — 确保所有响应都是 JSON
+app.use((err, req, res, next) => {
+  console.error('Server error:', err)
+  res.status(500).json({ error: '服务器内部错误' })
 })
 
 app.listen(PORT, '0.0.0.0', () => {

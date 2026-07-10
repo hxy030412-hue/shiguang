@@ -14,5 +14,6 @@ RUN npm install --omit=dev
 COPY server ./server
 COPY --from=frontend /app/dist ./dist
 RUN mkdir -p /data/uploads
+ENV DATA_DIR=/data
 EXPOSE 3000
 CMD ["node", "server/index.js"]

@@ -10,7 +10,14 @@ async function request(path, options = {}) {
   if (token) headers['Authorization'] = 'Bearer ' + token
 
   const res = await fetch(BASE + path, { ...options, headers })
-  const data = await res.json()
+  const text = await res.text()
+  if (!text) throw new Error('服务器无响应，请检查后端是否运行')
+  let data
+  try {
+    data = JSON.parse(text)
+  } catch {
+    throw new Error('服务器返回了非 JSON 数据')
+  }
   if (!res.ok) throw new Error(data.error || '请求失败')
   return data
 }
@@ -57,7 +64,10 @@ export const api = {
       headers: { Authorization: 'Bearer ' + token },
       body: form
     })
-    const data = await res.json()
+    const text = await res.text()
+    if (!text) throw new Error('服务器无响应')
+    let data
+    try { data = JSON.parse(text) } catch { throw new Error('服务器返回了非 JSON 数据') }
     if (!res.ok) throw new Error(data.error || '上传失败')
     return data
   }
