@@ -1,4 +1,4 @@
-﻿[phases.install]
+[phases.install]
 dependsOn = ["setup"]
 cmds = ["npm install"]
 
