@@ -24,9 +24,9 @@ dist-ssr
 *.sw?
 
 # Database
-server/*.db
-server/*.db-shm
-server/*.db-wal
+*.db
+*.db-shm
+*.db-wal
 
 # Uploads
 uploads/
